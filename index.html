@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Blockchain Gold Vault (BGV) | Physical Gold Stablecoin</title>
+  <meta name="description"
+    content="Blockchain Gold Vault (BGV) is a pioneering PoW blockchain stablecoin, where 1 GOLD-BGV is backed 100% by 1 gram of physical gold secured in Singapore vaults.">
+  <link rel="stylesheet" href="style.css">
+
+  <!-- Hero upgrade: Three.js loaded as an ES module via CDN importmap (no build step) -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
+      }
+    }
+  </script>
+</head>
+
+<body>
+
+  <!-- Background Glowing Blobs -->
+  <div class="gold-glow-bg" style="width: 400px; height: 400px; background: var(--gold-glow); top: 10%; left: -5%;">
+  </div>
+  <div class="gold-glow-bg"
+    style="width: 500px; height: 500px; background: rgba(212, 175, 55, 0.08); bottom: 15%; right: -5%;"></div>
+
+  <!-- NAVIGATION HEADER -->
+  <header class="navbar" id="navbar">
+    <div class="container">
+      <a href="#" class="logo-container">
+        <img src="assets/bgv-main-icon_02.png" alt="BGV Logo" class="logo-icon" style="background: none;">
+        <span>BGV <span class="gold-text" style="font-weight: 500; font-size: 0.9rem;">Gold Vault</span></span>
+      </a>
+
+      <ul class="nav-links" id="nav-links">
+        <li><a href="#hero">Overview</a></li>
+        <li><a href="#features">Features</a></li>
+        <li><a href="#calculator">Calculator</a></li>
+        <li><a href="#workflow">How It Works</a></li>
+        <li><a href="#security">Security</a></li>
+        <li><a href="#wallet" class="btn btn-secondary" style="padding: 0.5rem 1.2rem; font-size: 0.85rem;">Get
+            Wallet</a></li>
+      </ul>
+
+      <div class="mobile-menu-btn" id="mobile-menu-toggle">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+    </div>
+  </header>
+
+  <!-- HERO SECTION -->
+  <section class="hero-section" id="hero">
+    <div class="hero-bg-vault"></div>
+    <!-- Hero upgrade: floating 3D coin field (Three.js InstancedMesh), sits behind the text -->
+    <canvas class="coin-field" id="coin-field" aria-hidden="true"></canvas>
+    <!-- Hero upgrade: tsParticles gold background renders into this layer -->
+    <div class="hero-particles" id="hero-particles"></div>
+    <div class="container">
+      <div class="hero-content">
+        <div class="badge-singapore">
+          <span class="flag-sg"></span>
+          <span>Based in Singapore</span>
+        </div>
+
+        <h1 class="hero-title">
+          The Gold-Backed<br>
+          <span class="gold-text">Stablecoin</span> You Trust
+        </h1>
+
+        <p class="hero-subtitle">
+          Blockchain Gold Vault (BGV) integrates the timeless, secure value of physical gold with the efficiency and
+          transparency of blockchain. 1 GOLD-BGV is backed by exactly 1 gram of physical gold.
+        </p>
+
+        <div class="conversion-statement" style="margin: 0.5rem 0; max-width: 580px;">
+          <p>"The gold you buy is legally owned by you, not a promise or IOU. You have full rights to your physical gold."</p>
+          <span>- BGV Custodial Legal Title</span>
+        </div>
+
+        <div class="hero-tagline gold-text">
+          Real Gold. Real Ownership. Real Security.
+        </div>
+
+        <div class="hero-actions">
+          <a href="#wallet" class="btn btn-primary">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+              <path
+                d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            </svg>
+            Get BGV Wallet
+          </a>
+          <a href="#calculator" class="btn btn-secondary">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+              <path
+                d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+            </svg>
+            Calculate Value
+          </a>
+        </div>
+      </div>
+
+      <div class="coin-container" id="coin-container">
+        <div class="coin-glow-effect"></div>
+        <!-- Fallback single coin: shown only when WebGL is unavailable; otherwise the floating field replaces it -->
+        <img src="assets/bgv-main-icon_02.png" alt="BGV Gold Stablecoin" class="hero-coin" id="hero-coin">
+      </div>
+    </div>
+  </section>
+
+  <!-- TRUST BAR -->
+  <section class="trust-bar">
+    <div class="container">
+      <div class="trust-items">
+        <div class="trust-item">
+          <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path
+              d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+          </svg>
+          <span>100% Backed by Physical Gold</span>
+        </div>
+        <div class="trust-item">
+          <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path
+              d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
+          </svg>
+          <span>Licensed Singapore Vault</span>
+        </div>
+        <div class="trust-item">
+          <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path
+              d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+          </svg>
+          <span>Fully Insured & Audited</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES SECTION (12 PILLARS) -->
+  <section class="section" id="features">
+    <div class="container">
+      <div class="section-header text-center">
+        <span class="section-tag">Value Proposition</span>
+        <h2 class="section-title">The 12 Pillars of BGV</h2>
+        <p class="section-desc">Gold standard security met with decentralized blockchain technology, creating the
+          ultimate wealth vault.</p>
+      </div>
+
+      <div class="features-grid">
+        <!-- Feature 1 -->
+        <div class="glass-panel feature-card">
+          <div class="feature-icon-container">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path
+                d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+          </div>
+          <h3 class="feature-title text-gold">Fully Backed by Physical Gold</h3>
+          <p class="feature-desc">BGV is 100% backed by physical gold stored safely in a licensed Precious Metals Vault
+            in Singapore.</p>
+        </div>
+
+        <!-- Feature 2 -->
+        <div class="glass-panel feature-card">
+          <div class="feature-icon-container">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path
+                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+          </div>
+          <h3 class="feature-title text-gold">Full Insurance Coverage</h3>
+          <p class="feature-desc">Your entire gold holding is fully insured at replacement value, offering comprehensive
+            peace of mind.</p>
+        </div>
+
+        <!-- Feature 3 -->
+        <div class="glass-panel feature-card">
+          <div class="feature-icon-container">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h3 class="feature-title text-gold">Redemption in 24 Hours</h3>
+          <p class="feature-desc">Liquidity at its best. Redeem your tokens for physical gold bars and pick them up in
+            person within 24 hours.</p>
+        </div>
+
+        <!-- Feature 4 -->
+        <div class="glass-panel feature-card">
+          <div class="feature-icon-container">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          </div>
+          <h3 class="feature-title text-gold">Buy Gold Your Way</h3>
+          <p class="feature-desc">Acquire BGV stablecoins using traditional bank transfers, credit, or swap from other
+            leading cryptocurrencies.</p>
+        </div>
+
+        <!-- Feature 5 -->
+        <div class="glass-panel feature-card">
+          <div class="feature-icon-container">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z" />
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10M21 16v-4a1 1 0 00-.3-.7l-3-3A1 1 0 0017 8h-4m8 8H9" />
+            </svg>
+          </div>
+          <h3 class="feature-title text-gold">Gold Delivered to You</h3>
+          <p class="feature-desc">Prefer home storage? Request secure, fully-insured international delivery of physical
+            gold directly to your address.</p>
+        </div>
+
+        <!-- Feature 6 -->
+        <div class="glass-panel feature-card">
+          <div class="feature-icon-container">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h3 class="feature-title text-gold">KYC / AML Compliant</h3>
+          <p class="feature-desc">Operating in a fully regulated jurisdiction under Singapore precious metal dealer laws
+            and international KYC/AML compliance.</p>
+        </div>
+
+        <!-- Feature 7 -->
+        <div class="glass-panel feature-card">
+          <div class="feature-icon-container">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path
+                d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+            </svg>
+          </div>
+          <h3 class="feature-title text-gold">Dedicated Blockchain</h3>
+          <p class="feature-desc">Built on our custom secure PoW blockchain network, ensuring full ledger traceability
+            and tamper-proof auditability.</p>
+        </div>
+
+        <!-- Feature 8 -->
+        <div class="glass-panel feature-card">
+          <div class="feature-icon-container">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+            </svg>
+          </div>
+          <h3 class="feature-title text-gold">Mobile Wallet Integration</h3>
+          <p class="feature-desc">Manage your gold standard assets directly on your phone. Securely send, receive, swap,
+            and redeem at will.</p>
+        </div>
+
+        <!-- Feature 9 -->
+        <div class="glass-panel feature-card">
+          <div class="feature-icon-container">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+            </svg>
+          </div>
+          <h3 class="feature-title text-gold">Swap to Stablecoins</h3>
+          <p class="feature-desc">Easily hedge your wealth portfolio by swapping between GOLD-BGV and SGD or HKD pegged
+            stablecoins.</p>
+        </div>
+
+        <!-- Feature 10 -->
+        <div class="glass-panel feature-card">
+          <div class="feature-icon-container">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path
+                d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+            </svg>
+          </div>
+          <h3 class="feature-title text-gold">Photos & Video of Your Gold</h3>
+          <p class="feature-desc">Opt-in visual audits. Request real-time pictures and video clips of your physically
+            stored gold bars inside the vault.</p>
+        </div>
+
+        <!-- Feature 11 -->
+        <div class="glass-panel feature-card">
+          <div class="feature-icon-container">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path
+                d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            </svg>
+          </div>
+          <h3 class="feature-title text-gold">Visit Your Vaulted Gold</h3>
+          <p class="feature-desc">Unprecedented access. Schedule a physical visitation appointment to inspect your
+            actual gold reserves in Singapore.</p>
+        </div>
+
+        <!-- Feature 12 -->
+        <div class="glass-panel feature-card">
+          <div class="feature-icon-container">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+          </div>
+          <h3 class="feature-title text-gold">Full Operational Transparency</h3>
+          <p class="feature-desc">View real-time proofs of reserves, digital ledgers, vault custodian signatures, and
+            certified audit reports.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CALCULATOR & CONVERSION SECTION -->
+  <section class="section conversion-showcase" id="calculator">
+    <div class="container">
+      <div class="conversion-grid">
+        <div class="conversion-info">
+          <span class="section-tag">Direct Gold Ownership</span>
+          <h2>1 Gram of Gold =<br><span class="gold-text">1 GOLD-BGV</span></h2>
+          <p class="section-desc">
+            GOLD-BGV is a true asset-backed cryptocurrency. Each coin represents legal, fractional title ownership of
+            gold bars vaulted safely in Singapore. There are no debt layers, no promises, and no third-party credit
+            defaults.
+          </p>
+
+
+
+          <p class="section-desc">
+            Gold weight measurements are tracked using international metrics: 1 troy ounce equals exactly 31.1034768
+            grams. 1 GOLD-BGV token matches exactly 1.00g of gold reserves.
+          </p>
+        </div>
+
+        <div class="glass-panel calculator-card">
+          <h3 class="calc-title">
+            <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path
+                d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+            </svg>
+            Gold Value Calculator
+          </h3>
+
+          <div class="calc-inputs">
+            <div class="input-group">
+              <label for="fiat-input">Investment Amount</label>
+              <div class="input-wrapper">
+                <input type="number" id="fiat-input" value="1000" min="1" step="any">
+                <span class="input-suffix">SGD</span>
+              </div>
+            </div>
+
+            <div class="calc-arrow-divider">
+              <span>
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                  <path d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                </svg>
+              </span>
+            </div>
+
+            <div class="input-group">
+              <label for="gold-input">Gold Balance (GOLD-BGV)</label>
+              <div class="input-wrapper">
+                <input type="number" id="gold-input" readonly>
+                <span class="input-suffix">G (Grams)</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="calc-results">
+            <div class="calc-result-row">
+              <span class="label">Gold Weight (Grams):</span>
+              <span class="value" id="res-grams">0.00 g</span>
+            </div>
+            <div class="calc-result-row">
+              <span class="label">Troy Ounce Equivalent:</span>
+              <span class="value" id="res-oz">0.0000 oz</span>
+            </div>
+            <div class="calc-result-row">
+              <span class="label">Estimated Storage Cost:</span>
+              <span class="value" style="color: var(--success);">0% (Covered by custody credits)</span>
+            </div>
+            <div class="calc-result-row total">
+              <span class="label">Vault Allocated Balance:</span>
+              <span class="value" id="res-balance">0.00 GOLD-BGV</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS SECTION -->
+  <section class="section" id="workflow">
+    <div class="container">
+      <div class="section-header text-center">
+        <span class="section-tag">Operational Guide</span>
+        <h2 class="section-title">How BGV Works</h2>
+        <p class="section-desc">Five simple stages separating fiat currency from physical secure asset allocation.</p>
+      </div>
+
+      <div class="workflow-steps">
+        <!-- Step 1 -->
+        <div class="workflow-step">
+          <div class="step-num-container">
+            <div class="step-icon-circle">
+              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path
+                  d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+            </div>
+            <div class="step-num">1</div>
+          </div>
+          <h3 class="step-title">Buy BGV</h3>
+          <p class="step-desc">Deposit funds via Bank Transfer or Cryptocurrency to acquire GOLD-BGV.</p>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="workflow-step">
+          <div class="step-num-container">
+            <div class="step-icon-circle">
+              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path
+                  d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
+              </svg>
+            </div>
+            <div class="step-num">2</div>
+          </div>
+          <h3 class="step-title">Gold Vaulted</h3>
+          <p class="step-desc">Physical gold is allocated and stored in a licensed vault in Singapore.</p>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="workflow-step">
+          <div class="step-num-container">
+            <div class="step-icon-circle">
+              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <div class="step-num">3</div>
+          </div>
+          <h3 class="step-title">Manage In App</h3>
+          <p class="step-desc">Check balance, send tokens, or swap gold reserves with full ease in the app.</p>
+        </div>
+
+        <!-- Step 4 -->
+        <div class="workflow-step">
+          <div class="step-num-container">
+            <div class="step-icon-circle">
+              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path
+                  d="M8 4H6a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-2m-4-1v8m0 0l3-3m-3 3L9 8m-5 5h2.586a1 1 0 01.707.293l2.414 2.414a1 1 0 00.707.293h3.172a1 1 0 00.707-.293l2.414-2.414a1 1 0 01.707-.293H20" />
+              </svg>
+            </div>
+            <div class="step-num">4</div>
+          </div>
+          <h3 class="step-title">Redeem Gold</h3>
+          <p class="step-desc">Request physical gold pick up within 24 hours or secure home delivery.</p>
+        </div>
+
+        <!-- Step 5 -->
+        <div class="workflow-step">
+          <div class="step-num-container">
+            <div class="step-icon-circle">
+              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path
+                  d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+              </svg>
+            </div>
+            <div class="step-num">5</div>
+          </div>
+          <h3 class="step-title">Physical Ownership</h3>
+          <p class="step-desc">Enjoy full physical gold ownership, fully backed, audited, and insured.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- APP & WALLET CTA SECTION -->
+  <section class="section" id="wallet"
+    style="background: radial-gradient(circle at 90% 80%, rgba(212, 175, 55, 0.04) 0%, transparent 40%);">
+    <div class="container">
+      <div class="cta-grid">
+        <div class="cta-content">
+          <span class="section-tag">Mobile Application</span>
+          <h2>The BGV Gold Wallet</h2>
+          <p class="section-desc">
+            A secure digital gateway for gold management. The BGV wallet binds your credentials securely with regulatory
+            standards, giving you unparalleled asset security, instant transfers, and simplified exchange capabilities
+            within the whitelisted compliant ecosystem.
+          </p>
+          <p class="section-desc" style="margin-top: -1rem;">
+            Fully audit BGV transactions, trace digital signatures, and request real-time video validation feeds of
+            vault compartments instantly.
+          </p>
+
+          <div class="hero-actions" style="margin-top: 1rem;">
+            <a href="#" class="btn btn-primary">
+              <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
+                <path
+                  d="M17.5 12a5.5 5.5 0 11-11 0 5.5 5.5 0 0111 0zM12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2z" />
+              </svg>
+              Download for iOS
+            </a>
+            <a href="#" class="btn btn-secondary">
+              <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M3 3h18v18H3V3z" />
+              </svg>
+              Download for Android
+            </a>
+          </div>
+        </div>
+
+        <div class="app-screenshot-container">
+          <div class="phone-wrapper">
+            <div class="phone-screen">
+              <div class="phone-header">
+                <span>BGV Wallet</span>
+                <span style="color: var(--gold-primary);">ID: 10482</span>
+              </div>
+              <div class="phone-content">
+                <div class="phone-balance-card">
+                  <span class="phone-balance-label">Total Allocated Balance</span>
+                  <span class="phone-balance-val">12.3456 BGV</span>
+                  <span class="phone-balance-sub">≈ 12.3456g Fine Gold</span>
+                </div>
+
+                <div class="phone-actions">
+                  <div class="phone-action-btn">
+                    <div class="phone-action-icon"><svg width="16" height="16" fill="none" stroke="currentColor"
+                        stroke-width="2.5" viewBox="0 0 24 24">
+                        <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                      </svg></div>
+                    <span>Send</span>
+                  </div>
+                  <div class="phone-action-btn">
+                    <div class="phone-action-icon"><svg width="16" height="16" fill="none" stroke="currentColor"
+                        stroke-width="2.5" viewBox="0 0 24 24">
+                        <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg></div>
+                    <span>Receive</span>
+                  </div>
+                  <div class="phone-action-btn">
+                    <div class="phone-action-icon"><svg width="16" height="16" fill="none" stroke="currentColor"
+                        stroke-width="2.5" viewBox="0 0 24 24">
+                        <path
+                          d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                      </svg></div>
+                    <span>Redeem</span>
+                  </div>
+                  <div class="phone-action-btn">
+                    <div class="phone-action-icon"><svg width="16" height="16" fill="none" stroke="currentColor"
+                        stroke-width="2.5" viewBox="0 0 24 24">
+                        <path d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                      </svg></div>
+                    <span>Swap</span>
+                  </div>
+                </div>
+
+                <div class="phone-storage-card">
+                  <div class="phone-storage-header">
+                    <span>Gold Storage Status</span>
+                    <span class="phone-storage-status">Secured & Insured</span>
+                  </div>
+                  <span style="color: var(--text-muted); font-size: 0.65rem;">Custodian: Licensed Precious Metals Vault,
+                    Singapore</span>
+                </div>
+              </div>
+              <div class="phone-navigation">
+                <div class="phone-nav-item active">
+                  <svg fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
+                  </svg>
+                  <span>Home</span>
+                </div>
+                <div class="phone-nav-item">
+                  <svg fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4zM18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" />
+                  </svg>
+                  <span>Wallet</span>
+                </div>
+                <div class="phone-nav-item">
+                  <svg fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" />
+                  </svg>
+                  <span>Activity</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECURITY & LEGAL COMPLIANCE FOOTER -->
+  <footer class="footer" id="security">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-col">
+          <div class="footer-logo">
+            BGV <span class="gold-text">Vault</span>
+          </div>
+          <p class="footer-desc">
+            Combining direct gold legal title with cryptographic efficiency. Backed by physical fine gold held inside
+            Singapore's premier secure vaults.
+          </p>
+          <div style="display:flex; gap: 0.5rem; align-items:center;">
+            <div class="flag-sg" style="width:24px; height: 16px;"></div>
+            <span style="font-size:0.75rem; font-weight:700; text-transform:uppercase;">Licensed Singapore
+              Custodian</span>
+          </div>
+        </div>
+
+        <div class="footer-col">
+          <h4 class="footer-title">Navigation</h4>
+          <ul class="footer-links">
+            <li><a href="#hero">About BGV</a></li>
+            <li><a href="#features">12 Pillars</a></li>
+            <li><a href="#calculator">Value Calculator</a></li>
+            <li><a href="#workflow">How It Works</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4 class="footer-title">Compliance</h4>
+          <ul class="footer-links">
+            <li><a href="#">Singapore Gold Dealer License</a></li>
+            <li><a href="#">Audit Reports</a></li>
+            <li><a href="#">Terms & Custody Legal Title</a></li>
+            <li><a href="#">KYC / AML Policy</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4 class="footer-title">Newsletter</h4>
+          <p class="footer-desc">Stay updated on gold audit releases and stablecoin distribution events.</p>
+          <form class="newsletter-form" onsubmit="event.preventDefault(); alert('Subscribed successfully!');">
+            <input type="email" placeholder="Your email" required>
+            <button type="submit">Join</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p>&copy; 2026 Blockchain Gold Vault (BGV). All rights reserved. 1 BGV = 1 Gram Physical Gold.</p>
+        <div class="footer-legal-bar">
+          <a href="#">Privacy</a>
+          <a href="#">Security audits</a>
+          <a href="#">Legal Title terms</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Hero upgrade: animation libraries via CDN (UMD globals) -->
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tsparticles/slim@3.5.0/tsparticles.slim.bundle.min.js"></script>
+
+  <script src="app.js"></script>
+  <!-- Hero upgrade: Three.js coin + GSAP float + fly-into-wallet (ES module) -->
+  <script type="module" src="hero.js"></script>
+</body>
+
+</html>
