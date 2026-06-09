@@ -12,7 +12,8 @@ vault-hero/
 │   └── GoldHero.css    # component styles
 ├── assets/             # example assets
 │   ├── bgv-main-icon_02.png
-│   └── singapore_gold_vault.png
+│   ├── singapore_gold_vault.png
+│   └── gold-bar.png
 ├── README.md
 └── LICENSE
 ```
@@ -37,6 +38,7 @@ By default, `src/GoldHero.js` resolves these example assets from the repository-
 
 - `assets/bgv-main-icon_02.png`
 - `assets/singapore_gold_vault.png`
+- `assets/gold-bar.png`
 
 If you copy the component into another project, you can override asset paths on the mount element:
 
@@ -45,6 +47,7 @@ If you copy the component into another project, you can override asset paths on 
   id="gold-hero"
   data-coin-src="./assets/bgv-main-icon_02.png"
   data-vault-src="./assets/singapore_gold_vault.png"
+  data-gold-bar-src="./assets/gold-bar.png"
 ></div>
 ```
 
