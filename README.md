@@ -58,28 +58,6 @@ Its animation loop is: large BGV coin → one slow 360° rotation → coin fades
 
 Open `demo/simple-demo.html` for a standalone preview of the simple version.
 
-
-## Simple Hero Usage
-
-`GoldSimpleHero` is a lightweight static marketing version. It uses plain HTML, scoped CSS, and `requestAnimationFrame`; it does not require Three.js, tsParticles, coin clouds, explosions, gather animations, or gold flashes.
-
-```html
-<link rel="stylesheet" href="src/GoldSimpleHero.css">
-
-<div
-  id="gold-hero"
-  data-coin-src="./assets/bgv-main-icon_02.png"
-  data-vault-src="./assets/singapore_gold_vault.png"
-  data-gold-bar-src="./assets/gold-bar.png"
-></div>
-
-<script type="module" src="src/GoldSimpleHero.js"></script>
-```
-
-Its animation loop is: large BGV coin → one slow 360° rotation → coin fades out while `assets/gold-bar.png` fades in → gold bar hold → reset fade → loop.
-
-Open `demo/simple-demo.html` for a standalone preview of the simple version.
-
 ## Assets
 
 By default, `src/GoldHero.js` resolves these example assets from the repository-level `assets/` directory:

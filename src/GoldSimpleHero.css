@@ -29,6 +29,7 @@
 
 #gold-hero .simple-hero-section {
   position: relative;
+  z-index: 0;
   min-height: 100vh;
   overflow: hidden;
   display: flex;
@@ -50,7 +51,7 @@
   mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 82%, rgba(0,0,0,0) 100%);
   -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 82%, rgba(0,0,0,0) 100%);
   pointer-events: none;
-  z-index: -2;
+  z-index: 0;
 }
 
 #gold-hero .simple-hero-section::before {
@@ -61,10 +62,12 @@
     radial-gradient(circle at 78% 45%, rgba(243, 229, 171, 0.14), transparent 18%),
     radial-gradient(circle at 24% 24%, rgba(212, 175, 55, 0.08), transparent 28%);
   pointer-events: none;
-  z-index: -1;
+  z-index: 0;
 }
 
 #gold-hero .simple-hero-shell {
+  position: relative;
+  z-index: 1;
   width: min(1200px, calc(100% - 4rem));
   margin: 0 auto;
   display: grid;
