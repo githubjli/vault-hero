@@ -34,7 +34,29 @@ Use the component with one stylesheet, one mount element, and one module script:
 <script type="module" src="src/GoldHero.js"></script>
 ```
 
-Open `index.html` for a minimal preview of the same integration.
+Open `index.html` for the primary `GoldSimpleHero` homepage preview, or `demo/simple-demo.html` for a standalone simple embed example.
+
+
+## Simple Hero Usage
+
+`GoldSimpleHero` is a lightweight static marketing version. It uses plain HTML, scoped CSS, and `requestAnimationFrame`; it does not require Three.js, tsParticles, coin clouds, explosions, gather animations, or gold flashes.
+
+```html
+<link rel="stylesheet" href="src/GoldSimpleHero.css">
+
+<div
+  id="gold-hero"
+  data-coin-src="./assets/bgv-main-icon_02.png"
+  data-vault-src="./assets/singapore_gold_vault.png"
+  data-gold-bar-src="./assets/gold-bar.png"
+></div>
+
+<script type="module" src="src/GoldSimpleHero.js"></script>
+```
+
+Its animation loop is: large BGV coin → one slow 360° rotation → coin fades out while `assets/gold-bar.png` fades in → gold bar hold → reset fade → loop.
+
+Open `demo/simple-demo.html` for a standalone preview of the simple version.
 
 
 ## Simple Hero Usage
@@ -87,7 +109,8 @@ python3 -m http.server 4173
 
 Then open:
 
-- <http://127.0.0.1:4173/index.html>
+- <http://127.0.0.1:4173/index.html> (primary `GoldSimpleHero` preview)
+- <http://127.0.0.1:4173/demo/simple-demo.html> (standalone simple embed example)
 
 Run syntax checks:
 
