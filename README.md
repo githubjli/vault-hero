@@ -8,8 +8,12 @@
 vault-hero/
 ├── index.html          # third-party usage example / quick preview
 ├── src/
-│   ├── GoldHero.js     # component source
-│   └── GoldHero.css    # component styles
+│   ├── GoldHero.js           # full Three.js component source
+│   ├── GoldHero.css          # full component styles
+│   ├── GoldSimpleHero.js     # lightweight static component source
+│   └── GoldSimpleHero.css    # lightweight static component styles
+├── demo/
+│   └── simple-demo.html # GoldSimpleHero preview
 ├── assets/             # example assets
 │   ├── bgv-main-icon_02.png
 │   ├── singapore_gold_vault.png
@@ -31,6 +35,28 @@ Use the component with one stylesheet, one mount element, and one module script:
 ```
 
 Open `index.html` for a minimal preview of the same integration.
+
+
+## Simple Hero Usage
+
+`GoldSimpleHero` is a lightweight static marketing version. It uses plain HTML, scoped CSS, and `requestAnimationFrame`; it does not require Three.js, tsParticles, coin clouds, explosions, gather animations, or gold flashes.
+
+```html
+<link rel="stylesheet" href="src/GoldSimpleHero.css">
+
+<div
+  id="gold-hero"
+  data-coin-src="./assets/bgv-main-icon_02.png"
+  data-vault-src="./assets/singapore_gold_vault.png"
+  data-gold-bar-src="./assets/gold-bar.png"
+></div>
+
+<script type="module" src="src/GoldSimpleHero.js"></script>
+```
+
+Its animation loop is: large BGV coin → one slow 360° rotation → coin fades out while `assets/gold-bar.png` fades in → gold bar hold → reset fade → loop.
+
+Open `demo/simple-demo.html` for a standalone preview of the simple version.
 
 ## Assets
 
@@ -67,10 +93,12 @@ Run syntax checks:
 
 ```bash
 node --check src/GoldHero.js
+node --check src/GoldSimpleHero.js
 ```
 
 ## Notes
 
-- `src/GoldHero.css` only contains Hero component styles scoped under `#gold-hero`.
+- `src/GoldHero.css` and `src/GoldSimpleHero.css` only contain component styles scoped under `#gold-hero`.
 - `src/GoldHero.js` loads Three.js from CDN and dynamically loads optional particle/fallback libraries at runtime.
+- `src/GoldSimpleHero.js` is plain JavaScript and does not require Three.js or tsParticles.
 - `assets/` contains example imagery for preview and default asset resolution.
