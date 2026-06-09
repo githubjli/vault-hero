@@ -1,0 +1,263 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@600;700;800&display=swap');
+
+#gold-hero {
+  --simple-bg: #060608;
+  --simple-text-primary: #f8fafc;
+  --simple-text-secondary: #a7b0c0;
+  --simple-text-muted: #687386;
+  --simple-gold-primary: #d4af37;
+  --simple-gold-light: #f3e5ab;
+  --simple-gold-dark: #aa7c11;
+  --simple-gold-gradient: linear-gradient(135deg, #fff2bd 0%, #d4af37 50%, #8f650f 100%);
+  --simple-gold-glow: rgba(212, 175, 55, 0.34);
+  --simple-gold-border: rgba(212, 175, 55, 0.18);
+  --simple-font-body: 'Inter', sans-serif;
+  --simple-font-heading: 'Playfair Display', serif;
+
+  display: block;
+  background: var(--simple-bg);
+  color: var(--simple-text-primary);
+  font-family: var(--simple-font-body);
+  isolation: isolate;
+}
+
+#gold-hero *,
+#gold-hero *::before,
+#gold-hero *::after {
+  box-sizing: border-box;
+}
+
+#gold-hero .simple-hero-section {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  background:
+    radial-gradient(circle at 72% 42%, rgba(212, 175, 55, 0.18), transparent 34%),
+    linear-gradient(135deg, rgba(6, 6, 8, 1) 0%, rgba(12, 10, 8, 1) 100%);
+  padding: 120px 0 80px;
+}
+
+#gold-hero .simple-hero-bg-vault {
+  position: absolute;
+  inset: 0 0 0 auto;
+  width: 52%;
+  background-image: linear-gradient(90deg, var(--simple-bg) 0%, rgba(6, 6, 8, 0.5) 42%, rgba(6, 6, 8, 0.05) 100%), var(--simple-hero-vault-image);
+  background-size: cover;
+  background-position: center left;
+  opacity: 0.48;
+  mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 82%, rgba(0,0,0,0) 100%);
+  -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 82%, rgba(0,0,0,0) 100%);
+  pointer-events: none;
+  z-index: -2;
+}
+
+#gold-hero .simple-hero-section::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 78% 45%, rgba(243, 229, 171, 0.14), transparent 18%),
+    radial-gradient(circle at 24% 24%, rgba(212, 175, 55, 0.08), transparent 28%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+#gold-hero .simple-hero-shell {
+  width: min(1200px, calc(100% - 4rem));
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1.08fr 0.92fr;
+  align-items: center;
+  gap: 4rem;
+}
+
+#gold-hero .simple-hero-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.6rem;
+}
+
+#gold-hero .simple-badge {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.55rem 1.15rem;
+  border: 1px solid var(--simple-gold-border);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.045);
+  color: var(--simple-text-primary);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  backdrop-filter: blur(10px);
+}
+
+#gold-hero .simple-badge-dot {
+  width: 0.58rem;
+  height: 0.58rem;
+  border-radius: 999px;
+  background: var(--simple-gold-gradient);
+  box-shadow: 0 0 18px var(--simple-gold-glow);
+}
+
+#gold-hero .simple-hero-title {
+  margin: 0;
+  font-family: var(--simple-font-heading);
+  font-size: clamp(3rem, 6vw, 4.9rem);
+  line-height: 1.03;
+  letter-spacing: -0.045em;
+  font-weight: 800;
+}
+
+#gold-hero .simple-hero-title span {
+  display: inline-block;
+  background: var(--simple-gold-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+
+#gold-hero .simple-hero-subtitle {
+  max-width: 620px;
+  margin: 0;
+  color: var(--simple-text-secondary);
+  font-size: clamp(1.02rem, 1.5vw, 1.22rem);
+  line-height: 1.75;
+}
+
+#gold-hero .simple-hero-statement {
+  width: fit-content;
+  padding: 1rem 1.25rem;
+  border-left: 3px solid var(--simple-gold-primary);
+  border-radius: 0 16px 16px 0;
+  background: rgba(255, 255, 255, 0.035);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.025);
+}
+
+#gold-hero .simple-hero-statement p {
+  margin: 0;
+  color: var(--simple-gold-light);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+#gold-hero .simple-asset-stage {
+  position: relative;
+  min-height: 440px;
+  display: grid;
+  place-items: center;
+  perspective: 1200px;
+}
+
+#gold-hero .simple-stage-glow {
+  position: absolute;
+  width: min(72vw, 420px);
+  aspect-ratio: 1;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(243, 229, 171, 0.5) 0%, rgba(212, 175, 55, 0.24) 42%, rgba(212, 175, 55, 0) 72%);
+  filter: blur(30px);
+  opacity: 0.72;
+  transform: translateZ(0);
+  pointer-events: none;
+}
+
+#gold-hero .simple-coin,
+#gold-hero .simple-gold-bar {
+  grid-area: 1 / 1;
+  display: block;
+  max-width: min(78vw, 390px);
+  max-height: 390px;
+  object-fit: contain;
+  will-change: transform, opacity;
+  transform-origin: center center;
+  backface-visibility: visible;
+  pointer-events: none;
+  user-select: none;
+}
+
+#gold-hero .simple-coin {
+  width: min(78vw, 390px);
+  opacity: 0;
+  filter: drop-shadow(0 0 34px rgba(212, 175, 55, 0.48));
+}
+
+#gold-hero .simple-gold-bar {
+  width: min(76vw, 430px);
+  opacity: 0;
+  filter: drop-shadow(0 24px 34px rgba(0, 0, 0, 0.48)) drop-shadow(0 0 30px rgba(212, 175, 55, 0.26));
+}
+
+@media (max-width: 991px) {
+  #gold-hero .simple-hero-section {
+    padding: 96px 0 70px;
+  }
+
+  #gold-hero .simple-hero-bg-vault {
+    width: 100%;
+    opacity: 0.24;
+  }
+
+  #gold-hero .simple-hero-shell {
+    width: min(100% - 2.4rem, 720px);
+    grid-template-columns: 1fr;
+    gap: 2.4rem;
+    text-align: center;
+  }
+
+  #gold-hero .simple-badge,
+  #gold-hero .simple-hero-statement {
+    align-self: center;
+  }
+
+  #gold-hero .simple-asset-stage {
+    min-height: 340px;
+  }
+
+  #gold-hero .simple-coin {
+    width: min(72vw, 320px);
+  }
+
+  #gold-hero .simple-gold-bar {
+    width: min(78vw, 370px);
+  }
+}
+
+@media (max-width: 520px) {
+  #gold-hero .simple-hero-section {
+    padding: 82px 0 56px;
+  }
+
+  #gold-hero .simple-hero-shell {
+    width: min(100% - 2rem, 420px);
+  }
+
+  #gold-hero .simple-hero-content {
+    gap: 1.25rem;
+  }
+
+  #gold-hero .simple-hero-title {
+    font-size: 2.45rem;
+  }
+
+  #gold-hero .simple-hero-statement p {
+    font-size: 0.82rem;
+  }
+
+  #gold-hero .simple-asset-stage {
+    min-height: 280px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #gold-hero .simple-coin,
+  #gold-hero .simple-gold-bar {
+    transition: none !important;
+    transform: none !important;
+  }
+}
