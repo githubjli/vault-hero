@@ -19,25 +19,7 @@
 
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
 
-const DEFAULT_COIN_IMG = new URL('../assets/bgv-main-icon_02.png', import.meta.url).href;
-const DEFAULT_VAULT_IMG = new URL('../assets/singapore_gold_vault.png', import.meta.url).href;
-
-/**
- * Coin texture orientation calibration.
- *
- * bgv-main-icon_02.png is the canonical front face.
- * The G should be upright when COIN_UPRIGHT_ROTATION is applied.
- *
- * Asset convention:
- * bgv-main-icon_02.png
- * = canonical front face
- * = G upright
- * = rotation 0
- *
- * Change only this value when replacing the coin artwork.
- */
-const COIN_UPRIGHT_ROTATION = Math.PI / 4;
-const DEBUG_UPRIGHT = false;
+const COIN_IMG = 'assets/bgv-main-icon_02.png';
 
 const ROOT_ID = 'gold-hero';
 
@@ -57,16 +39,7 @@ function loadScriptOnce(src) {
   });
 }
 
-function assetUrl(value, fallback) {
-  return value ? new URL(value, document.baseURI).href : fallback;
-}
-
-function cssUrl(value) {
-  return `url("${value.replaceAll('\\', '\\\\').replaceAll('"', '\\"')}")`;
-}
-
-function renderGoldHero(root, assets) {
-  root.style.setProperty('--gold-hero-vault-image', cssUrl(assets.vault));
+function renderGoldHero(root) {
   root.innerHTML = `
     <section class="hero-section" id="hero">
       <div class="hero-bg-vault"></div>
@@ -116,7 +89,7 @@ function renderGoldHero(root, assets) {
 
         <div class="coin-container" id="coin-container">
           <div class="coin-glow-effect"></div>
-          <img src="${assets.coin}" alt="BGV Gold Stablecoin" class="hero-coin" id="hero-coin">
+          <img src="assets/bgv-main-icon_02.png" alt="BGV Gold Stablecoin" class="hero-coin" id="hero-coin">
         </div>
       </div>
     </section>
@@ -127,13 +100,7 @@ const root = document.getElementById(ROOT_ID);
 if (!root) {
   throw new Error(`[GoldHero] Missing #${ROOT_ID} mount element.`);
 }
-
-const assets = {
-  coin: assetUrl(root.dataset.coinSrc, DEFAULT_COIN_IMG),
-  vault: assetUrl(root.dataset.vaultSrc, DEFAULT_VAULT_IMG)
-};
-
-renderGoldHero(root, assets);
+renderGoldHero(root);
 
 
 const heroSection = document.getElementById('hero');
@@ -193,13 +160,20 @@ const MAX_DELAY = 0.45;         // gather/scatter wave spread
 const dummy = new THREE.Object3D();
 const billboardHelper = new THREE.Object3D();
 const Z_AXIS = new THREE.Vector3(0, 0, 1);
-// The geometry is pre-rotated so the front cap normal points toward +Z,
-// which faces the default camera at +Z. No logo roll is encoded here.
-const qFace = new THREE.Quaternion();
-// The only logo-roll correction: rotate around the coin face normal.
-const qLogoFix = new THREE.Quaternion().setFromAxisAngle(Z_AXIS, COIN_UPRIGHT_ROTATION);
-// Canonical final coin orientation: face camera + calibrated upright logo.
-const qUpright = new THREE.Quaternion().copy(qFace).multiply(qLogoFix);
+
+/**
+ * Asset convention:
+ *
+ * bgv-main-icon_02.png
+ * = canonical front face
+ * = G upright
+ * = rotation 0
+ *
+ * Every merged hero coin must return
+ * to this orientation.
+ */
+const COIN_UPRIGHT_ROTATION = 0;
+const qUpright = new THREE.Quaternion().setFromAxisAngle(Z_AXIS, COIN_UPRIGHT_ROTATION);
 const qSpin = new THREE.Quaternion();
 const qA = new THREE.Quaternion();
 const qB = new THREE.Quaternion();
@@ -229,17 +203,9 @@ function fieldSize() {
   return { width, height };
 }
 
-function calibrateCoinTexture(texture) {
-  texture.center.set(0.5, 0.5);
-  texture.rotation = COIN_UPRIGHT_ROTATION;
-  texture.needsUpdate = true;
-  return texture;
-}
-
 function buildCoinMesh(texture) {
   const geo = new THREE.CylinderGeometry(0.6, 0.6, 0.16, 40); // a touch thicker so the spinning edge reads
-  geo.rotateX(THREE.MathUtils.degToRad(90)); // caps now face ±Z, so the coin's face points along +Z (forward)
-  calibrateCoinTexture(texture);
+  geo.rotateX(Math.PI / 2); // caps now face ±Z, so the coin's face points along +Z (forward)
   faceMat = new THREE.MeshStandardMaterial({
     map: texture, metalness: 0.55, roughness: 0.35, alphaTest: 0.5,
     emissive: 0xffcf66, emissiveIntensity: 0
@@ -249,7 +215,7 @@ function buildCoinMesh(texture) {
     emissive: 0xffe08a, emissiveIntensity: 0
   });
   // Back face: horizontally-flipped texture so the G reads correctly from behind too
-  const backTex = calibrateCoinTexture(texture.clone());
+  const backTex = texture.clone();
   backTex.colorSpace = THREE.SRGBColorSpace;
   backTex.wrapS = THREE.RepeatWrapping;
   backTex.repeat.x = -1;
@@ -306,11 +272,6 @@ function smooth01(x) { x = Math.min(1, Math.max(0, x)); return x * x * (3 - 2 * 
 
 // Update every coin's instance matrix for time t (dt advances tumbling spin).
 function updateCoins(t, dt) {
-  if (DEBUG_UPRIGHT) {
-    showDebugUprightCoin();
-    return;
-  }
-
   // Mouse takes over while it's recently moving; otherwise a slow auto cycle runs.
   const mouseEngaged = ptr.active && (performance.now() - lastMoveTime < 1500);
 
@@ -341,7 +302,7 @@ function updateCoins(t, dt) {
   backMat.emissiveIntensity = e * 0.6;
   const bigNow = BIG_SCALE * (1 + flash * 0.08); // brief scale pop on merge
 
-  // Gathered instances converge only to the calibrated upright orientation.
+  // Gathered instances converge only to the canonical upright orientation.
   // Scatter can tumble freely, but merged coins must not keep any random roll,
   // tilt, or arbitrary final angle.
   qB.copy(qUpright);
@@ -382,15 +343,6 @@ function updateCoins(t, dt) {
   }
 }
 
-function showDebugUprightCoin() {
-  if (coins) coins.visible = false;
-  if (!heroCoin) return;
-  heroCoin.visible = true;
-  heroCoin.position.set(0, 0, 0);
-  heroCoin.quaternion.copy(qUpright);
-  heroCoin.scale.setScalar(3);
-}
-
 function applyUprightCameraFacingOrientation(mesh) {
   // Face the camera first, then apply the single canonical upright correction.
   // This keeps the merged G readable without adding any ad hoc Z-roll or
@@ -402,7 +354,7 @@ function applyUprightCameraFacingOrientation(mesh) {
 }
 
 function initCoinField() {
-  new THREE.TextureLoader().load(assets.coin, (texture) => {
+  new THREE.TextureLoader().load(COIN_IMG, (texture) => {
     texture.colorSpace = THREE.SRGBColorSpace;
     const { width, height } = fieldSize();
     const aspect = width / height;
