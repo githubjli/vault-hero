@@ -17,9 +17,107 @@
 // Fallback: if WebGL is unavailable the original <img#hero-coin> stays visible.
 // ============================================================================
 
-import * as THREE from 'three';
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
 
-const COIN_IMG = 'assets/bgv-main-icon_02.png';
+const DEFAULT_COIN_IMG = new URL('../assets/bgv-main-icon_02.png', import.meta.url).href;
+const DEFAULT_VAULT_IMG = new URL('../assets/singapore_gold_vault.png', import.meta.url).href;
+
+const ROOT_ID = 'gold-hero';
+
+function loadScriptOnce(src) {
+  if ([...document.scripts].some((script) => script.src === src)) return Promise.resolve();
+
+  return new Promise((resolve) => {
+    const script = document.createElement('script');
+    script.src = src;
+    script.async = true;
+    script.onload = () => resolve();
+    script.onerror = () => {
+      console.warn(`[GoldHero] optional dependency failed to load: ${src}`);
+      resolve();
+    };
+    document.head.appendChild(script);
+  });
+}
+
+function assetUrl(value, fallback) {
+  return value ? new URL(value, document.baseURI).href : fallback;
+}
+
+function cssUrl(value) {
+  return `url("${value.replaceAll('\\', '\\\\').replaceAll('"', '\\"')}")`;
+}
+
+function renderGoldHero(root, assets) {
+  root.style.setProperty('--gold-hero-vault-image', cssUrl(assets.vault));
+  root.innerHTML = `
+    <section class="hero-section" id="hero">
+      <div class="hero-bg-vault"></div>
+      <canvas class="coin-field" id="coin-field" aria-hidden="true"></canvas>
+      <div class="hero-particles" id="hero-particles"></div>
+      <div class="container">
+        <div class="hero-content">
+          <div class="badge-singapore">
+            <span class="flag-sg"></span>
+            <span>Based in Singapore</span>
+          </div>
+
+          <h1 class="hero-title">
+            The Gold-Backed<br>
+            <span class="gold-text">Stablecoin</span> You Trust
+          </h1>
+
+          <p class="hero-subtitle">
+            Blockchain Gold Vault (BGV) integrates the timeless, secure value of physical gold with the efficiency and
+            transparency of blockchain. 1 GOLD-BGV is backed by exactly 1 gram of physical gold.
+          </p>
+
+          <div class="conversion-statement">
+            <p>"The gold you buy is legally owned by you, not a promise or IOU. You have full rights to your physical gold."</p>
+            <span>- BGV Custodial Legal Title</span>
+          </div>
+
+          <div class="hero-tagline gold-text">
+            Real Gold. Real Ownership. Real Security.
+          </div>
+
+          <div class="hero-actions">
+            <a href="#wallet" class="btn btn-primary">
+              <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              </svg>
+              Get BGV Wallet
+            </a>
+            <a href="#calculator" class="btn btn-secondary">
+              <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+              </svg>
+              Calculate Value
+            </a>
+          </div>
+        </div>
+
+        <div class="coin-container" id="coin-container">
+          <div class="coin-glow-effect"></div>
+          <img src="${assets.coin}" alt="BGV Gold Stablecoin" class="hero-coin" id="hero-coin">
+        </div>
+      </div>
+    </section>
+  `;
+}
+
+const root = document.getElementById(ROOT_ID);
+if (!root) {
+  throw new Error(`[GoldHero] Missing #${ROOT_ID} mount element.`);
+}
+
+const assets = {
+  coin: assetUrl(root.dataset.coinSrc, DEFAULT_COIN_IMG),
+  vault: assetUrl(root.dataset.vaultSrc, DEFAULT_VAULT_IMG)
+};
+
+renderGoldHero(root, assets);
+
 
 const heroSection = document.getElementById('hero');
 const coinContainer = document.getElementById('coin-container');
@@ -62,7 +160,7 @@ function initParticles() {
       },
       detectRetina: true
     }
-  }).catch((e) => console.warn('[hero] tsParticles failed:', e));
+  }).catch((e) => console.warn('[GoldHero] tsParticles failed:', e));
 }
 
 // ---------------------------------------------------------------------------
@@ -70,22 +168,29 @@ function initParticles() {
 // ---------------------------------------------------------------------------
 let renderer, scene, camera, coins, heroCoin, faceMat, edgeMat, backMat;
 let flash = 0, prevGather = 0;          // gold flash pulse at the merge moment
-let mergeT0 = -100;                      // time the swarm last merged (anchors the spin)
 const clock = new THREE.Clock();
 const BASE_Z = 9;
 const BIG_SCALE = 2.4;          // size of the merged single coin
 const MAX_DELAY = 0.45;         // gather/scatter wave spread
 
 const dummy = new THREE.Object3D();
-const Y_AXIS = new THREE.Vector3(0, 1, 0);
+const billboardHelper = new THREE.Object3D();
 const Z_AXIS = new THREE.Vector3(0, 0, 1);
-const qFace = new THREE.Quaternion(); // identity: coin geometry is pre-rotated to face +Z
-// Z-roll correction so the merged coin's G is perfectly upright (tune if texture is rotated)
-const TEXTURE_ROTATION_FIX = 0;
-const qTextureFix = new THREE.Quaternion().setFromAxisAngle(Z_AXIS, TEXTURE_ROTATION_FIX);
-const qUpright = new THREE.Quaternion().copy(qFace).multiply(qTextureFix);
+
+/**
+ * Asset convention:
+ *
+ * bgv-main-icon_02.png
+ * = canonical front face
+ * = G upright
+ * = rotation 0
+ *
+ * Every merged hero coin must return
+ * to this orientation.
+ */
+const COIN_UPRIGHT_ROTATION = 0;
+const qUpright = new THREE.Quaternion().setFromAxisAngle(Z_AXIS, COIN_UPRIGHT_ROTATION);
 const qSpin = new THREE.Quaternion();
-const qShared = new THREE.Quaternion();
 const qA = new THREE.Quaternion();
 const qB = new THREE.Quaternion();
 const tmpAxis = new THREE.Vector3();
@@ -204,7 +309,7 @@ function updateCoins(t, dt) {
   gather.cur += (gather.target - gather.cur) * 0.05;
 
   // Gold flash pulse when the swarm crosses into "merged" on the way up
-  if (prevGather < 0.85 && gather.cur >= 0.85) { flash = 1; mergeT0 = t; } // anchor spin to merge
+  if (prevGather < 0.85 && gather.cur >= 0.85) { flash = 1; }
   prevGather = gather.cur;
   flash *= 0.94;
   const e = flash * flash;
@@ -213,16 +318,10 @@ function updateCoins(t, dt) {
   backMat.emissiveIntensity = e * 0.6;
   const bigNow = BIG_SCALE * (1 + flash * 0.08); // brief scale pop on merge
 
-  // Merged hero coin orientation: the G must ALWAYS end upright and facing the
-  // camera. Only a slight, decaying rotateY wobble is allowed — never a Z-roll,
-  // tumble, or random tilt. It settles to the fixed upright quaternion (qFace),
-  // which the texture verified as "G facing camera, G up". Anchored to mergeT0
-  // so mouse-triggered merges settle upright too.
-  const SETTLE = 4.0;                            // seconds for the wobble to fully settle
-  const st = Math.max(0, t - mergeT0);
-  const wobbleY = st >= SETTLE ? 0 : Math.sin(st * 2.0) * 0.35 * (1 - st / SETTLE); // gentle rotateY → 0
-  qShared.setFromAxisAngle(Y_AXIS, wobbleY);
-  qB.copy(qShared).multiply(qUpright);           // instance slerp target (hero coin billboards below)
+  // Gathered instances converge only to the canonical upright orientation.
+  // Scatter can tumble freely, but merged coins must not keep any random roll,
+  // tilt, or arbitrary final angle.
+  qB.copy(qUpright);
 
   for (let i = 0; i < data.length; i++) {
     const c = data[i];
@@ -234,7 +333,7 @@ function updateCoins(t, dt) {
     const sy = c.y + Math.sin(t * c.floatSpeed + c.floatPhase) * c.floatAmp;
     const sz = c.z;
     tmpAxis.copy(c.axis);
-    qA.copy(qSpin.setFromAxisAngle(tmpAxis, c.angle)).multiply(qFace);
+    qA.copy(qSpin.setFromAxisAngle(tmpAxis, c.angle)).multiply(qUpright);
 
     dummy.position.set(
       sx + (gatherPoint.x - sx) * g,
@@ -255,18 +354,23 @@ function updateCoins(t, dt) {
   heroCoin.visible = heroAmt > 0.01;
   if (heroCoin.visible) {
     heroCoin.position.copy(gatherPoint);
-    // Billboard: face the camera with world-up, so the G is always head-on and
-    // upright regardless of the coin's position or camera parallax.
-    heroCoin.up.set(0, 1, 0);
-    heroCoin.lookAt(camera.position);
-    heroCoin.rotateZ(TEXTURE_ROTATION_FIX);      // residual texture-roll correction
-    if (wobbleY) heroCoin.rotateY(wobbleY);      // gentle settle wobble (Y only)
+    applyUprightCameraFacingOrientation(heroCoin);
     heroCoin.scale.setScalar(bigNow * heroAmt);
   }
 }
 
+function applyUprightCameraFacingOrientation(mesh) {
+  // Face the camera first, then apply the single canonical upright correction.
+  // This keeps the merged G readable without adding any ad hoc Z-roll or
+  // arbitrary final angle outside qUpright.
+  billboardHelper.position.copy(mesh.position);
+  billboardHelper.up.set(0, 1, 0);
+  billboardHelper.lookAt(camera.position);
+  mesh.quaternion.copy(billboardHelper.quaternion).multiply(qUpright);
+}
+
 function initCoinField() {
-  new THREE.TextureLoader().load(COIN_IMG, (texture) => {
+  new THREE.TextureLoader().load(assets.coin, (texture) => {
     texture.colorSpace = THREE.SRGBColorSpace;
     const { width, height } = fieldSize();
     const aspect = width / height;
@@ -309,7 +413,7 @@ function initCoinField() {
     clock.start();
     renderer.setAnimationLoop(animateField);
   }, undefined, (err) => {
-    console.warn('[hero] coin texture failed, using image fallback:', err);
+    console.warn('[GoldHero] coin texture failed, using image fallback:', err);
     initFallbackTilt();
   });
 }
@@ -371,11 +475,13 @@ function initFallbackTilt() {
 // ---------------------------------------------------------------------------
 // Boot
 // ---------------------------------------------------------------------------
+await loadScriptOnce('https://cdn.jsdelivr.net/npm/@tsparticles/slim@3.5.0/tsparticles.slim.bundle.min.js');
 initParticles();
 
 if (webglAvailable()) {
   try { initCoinField(); }
-  catch (e) { console.warn('[hero] coin field init failed, using image fallback:', e); initFallbackTilt(); }
+  catch (e) { console.warn('[GoldHero] coin field init failed, using image fallback:', e); initFallbackTilt(); }
 } else {
+  await loadScriptOnce('https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js');
   initFallbackTilt();
 }
