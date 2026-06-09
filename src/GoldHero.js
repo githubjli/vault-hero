@@ -554,15 +554,9 @@ function updateCoins(t, dt) {
     heroCoin.scale.setScalar(BIG_SCALE * shrink);
   }
 
-  if (phase === PHASES.COIN_GATHER && p > 0.62) {
-    const heroAmt = smooth01((p - 0.62) / 0.28) * (1 - smooth01((p - 0.92) / 0.08));
-    heroCoin.visible = heroAmt > 0.01;
-    if (heroCoin.visible) {
-      heroCoin.position.copy(gatherPoint);
-      applyUprightCameraFacingOrientation(heroCoin);
-      heroCoin.scale.setScalar(BIG_SCALE * heroAmt);
-    }
-  }
+  // During the final transformation, gathered small coins shrink away at the
+  // center and hand off only to golden light. Do not reveal the large hero coin
+  // as an intermediate object before the physical gold bar appears.
 }
 
 function showDebugUprightCoin() {
