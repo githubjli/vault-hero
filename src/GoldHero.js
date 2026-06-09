@@ -1,19 +1,15 @@
 // ============================================================================
-// BGV Hero — floating 3D gold-coin field with mouse-driven gather/scatter
-//   1. Many small solid coins (CylinderGeometry + the existing PNG texture +
-//      gold rim), drawn with one InstancedMesh; seeded with a minimum spacing
-//      so they don't interpenetrate while floating.
-//   2. Mouse choreography: each coin morphs between a SCATTERED home (depth-
-//      distributed, floating) and a GATHERED target (all collapse to center,
-//      aligned, scaled up -> they merge into one big coin). A per-coin delay
-//      makes them stream in/out in waves ("一群飞来 / 一群飞去"); the depth
-//      spread gives the far-to-near rush. The merge point follows the cursor.
-//      gather amount = how close the cursor is to the cluster -> 随鼠标变换.
-//   3. tsParticles gold dust drifts in the background.
-//   4. Subtle camera parallax + dolly.
+// BGV Hero — phased 3D gold animation flow
+//   1. Starts with one large BGV coin, then rotates it one complete 360° turn.
+//   2. The large coin explodes into an InstancedMesh cloud of small coins that
+//      keep their existing seeded float, spin, depth, and low-power behavior.
+//   3. The cloud gathers back to center, forges through a required gold flash,
+//      then reveals assets/gold-bar.png before looping to the coin again.
+//   4. tsParticles gold dust drifts in the background.
+//   5. Pointer movement is kept for subtle camera parallax only.
 //
 // Vault background stays the original high-res image (.hero-bg-vault).
-// No new artwork — coins are textured with assets/bgv-main-icon_02.png.
+// Coin textures use assets/bgv-main-icon_02.png. Gold bar uses assets/gold-bar.png.
 // Fallback: if WebGL is unavailable the original <img#hero-coin> stays visible.
 // ============================================================================
 
@@ -21,6 +17,7 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.m
 
 const DEFAULT_COIN_IMG = new URL('../assets/bgv-main-icon_02.png', import.meta.url).href;
 const DEFAULT_VAULT_IMG = new URL('../assets/singapore_gold_vault.png', import.meta.url).href;
+const DEFAULT_GOLD_BAR_IMG = new URL('../assets/gold-bar.png', import.meta.url).href;
 
 /**
  * Coin texture orientation calibration.
@@ -130,7 +127,8 @@ if (!root) {
 
 const assets = {
   coin: assetUrl(root.dataset.coinSrc, DEFAULT_COIN_IMG),
-  vault: assetUrl(root.dataset.vaultSrc, DEFAULT_VAULT_IMG)
+  vault: assetUrl(root.dataset.vaultSrc, DEFAULT_VAULT_IMG),
+  goldBar: assetUrl(root.dataset.goldBarSrc, DEFAULT_GOLD_BAR_IMG)
 };
 
 renderGoldHero(root, assets);
@@ -183,16 +181,61 @@ function initParticles() {
 // ---------------------------------------------------------------------------
 // Floating / gathering 3D coin field
 // ---------------------------------------------------------------------------
-let renderer, scene, camera, coins, heroCoin, faceMat, edgeMat, backMat;
-let flash = 0, prevGather = 0;          // gold flash pulse at the merge moment
+let renderer, scene, camera, coins, heroCoin, goldBar, flashSprite, faceMat, edgeMat, backMat;
+let flashMat, goldBarMat;
 const clock = new THREE.Clock();
 const BASE_Z = 9;
-const BIG_SCALE = 2.4;          // size of the merged single coin
+const BIG_SCALE = 2.4;          // size of the large single coin
+const GOLD_BAR_BASE_SCALE = 2.7;
 const MAX_DELAY = 0.45;         // gather/scatter wave spread
+
+const PHASES = {
+  INTRO_COIN: 'intro_coin',
+  COIN_SPIN: 'coin_spin',
+  COIN_EXPLODE: 'coin_explode',
+  COIN_FIELD: 'coin_field',
+  COIN_GATHER: 'coin_gather',
+  GOLD_FLASH: 'gold_flash',
+  GOLD_BAR: 'gold_bar'
+};
+
+const PHASE_DURATIONS = {
+  INTRO_COIN: 1.0,
+  COIN_SPIN: 3.0,
+  COIN_EXPLODE: 1.4,
+  COIN_FIELD: 4.0,
+  COIN_GATHER: 2.0,
+  GOLD_FLASH: 1.0,
+  GOLD_BAR: 4.0
+};
+
+const PHASE_DURATION_BY_NAME = {
+  [PHASES.INTRO_COIN]: PHASE_DURATIONS.INTRO_COIN,
+  [PHASES.COIN_SPIN]: PHASE_DURATIONS.COIN_SPIN,
+  [PHASES.COIN_EXPLODE]: PHASE_DURATIONS.COIN_EXPLODE,
+  [PHASES.COIN_FIELD]: PHASE_DURATIONS.COIN_FIELD,
+  [PHASES.COIN_GATHER]: PHASE_DURATIONS.COIN_GATHER,
+  [PHASES.GOLD_FLASH]: PHASE_DURATIONS.GOLD_FLASH,
+  [PHASES.GOLD_BAR]: PHASE_DURATIONS.GOLD_BAR
+};
+
+const NEXT_PHASE = {
+  [PHASES.INTRO_COIN]: PHASES.COIN_SPIN,
+  [PHASES.COIN_SPIN]: PHASES.COIN_EXPLODE,
+  [PHASES.COIN_EXPLODE]: PHASES.COIN_FIELD,
+  [PHASES.COIN_FIELD]: PHASES.COIN_GATHER,
+  [PHASES.COIN_GATHER]: PHASES.GOLD_FLASH,
+  [PHASES.GOLD_FLASH]: PHASES.GOLD_BAR,
+  [PHASES.GOLD_BAR]: PHASES.INTRO_COIN
+};
+
+let phase = PHASES.INTRO_COIN;
+let phaseStart = 0;
 
 const dummy = new THREE.Object3D();
 const billboardHelper = new THREE.Object3D();
 const Z_AXIS = new THREE.Vector3(0, 0, 1);
+const Y_AXIS = new THREE.Vector3(0, 1, 0);
 // The geometry is pre-rotated so the front cap normal points toward +Z,
 // which faces the default camera at +Z. No logo roll is encoded here.
 const qFace = new THREE.Quaternion();
@@ -204,19 +247,17 @@ const qSpin = new THREE.Quaternion();
 const qA = new THREE.Quaternion();
 const qB = new THREE.Quaternion();
 const tmpAxis = new THREE.Vector3();
+const ySpinQuat = new THREE.Quaternion();
 
 const data = [];
 const view = { halfH: 3.3, halfW: 5.3 };
 const ptr = { x: 0, y: 0, active: false };
-const gather = { cur: 0, target: 0 };
 const C = new THREE.Vector3();
 const pointerWorld = new THREE.Vector3();
 const gatherPoint = new THREE.Vector3();
 const gp = new THREE.Vector3();         // eased merge point (avoids snapping)
 const tmpV = new THREE.Vector3();
 const camPan = { x: 0, y: 0 };
-let lastMoveTime = -1e9;                 // for mouse-takeover detection
-const AUTO_PERIOD = 20;                  // seconds per auto gather/scatter cycle (longer merged hold)
 const Z_MIN = -5.0, Z_MAX = 3.5;         // coin depth range (drives 近大远小 + parallax)
 
 function fieldSize() {
@@ -259,6 +300,53 @@ function buildCoinMesh(texture) {
     emissive: 0xffcf66, emissiveIntensity: 0
   });
   return new THREE.InstancedMesh(geo, [edgeMat, faceMat, backMat], COIN_COUNT); // [side, top, bottom]
+}
+
+function makeFlashTexture() {
+  const size = 256;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  const gradient = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+  gradient.addColorStop(0, 'rgba(255, 255, 235, 1)');
+  gradient.addColorStop(0.22, 'rgba(255, 229, 118, 0.95)');
+  gradient.addColorStop(0.48, 'rgba(212, 175, 55, 0.55)');
+  gradient.addColorStop(1, 'rgba(212, 175, 55, 0)');
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, size, size);
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
+}
+
+function buildFlashSprite() {
+  flashMat = new THREE.SpriteMaterial({
+    map: makeFlashTexture(),
+    color: 0xffd86b,
+    transparent: true,
+    opacity: 0,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending
+  });
+  const sprite = new THREE.Sprite(flashMat);
+  sprite.visible = false;
+  return sprite;
+}
+
+function buildGoldBar(texture) {
+  texture.colorSpace = THREE.SRGBColorSpace;
+  const imageAspect = texture.image?.width && texture.image?.height ? texture.image.width / texture.image.height : 1.8;
+  const geometry = new THREE.PlaneGeometry(imageAspect, 1);
+  goldBarMat = new THREE.MeshBasicMaterial({
+    map: texture,
+    transparent: true,
+    opacity: 0,
+    depthWrite: false
+  });
+  const mesh = new THREE.Mesh(geometry, goldBarMat);
+  mesh.visible = false;
+  return mesh;
 }
 
 function seedCoins(aspect) {
@@ -304,6 +392,51 @@ function makeCoin(x, y, z) {
 
 function smooth01(x) { x = Math.min(1, Math.max(0, x)); return x * x * (3 - 2 * x); }
 
+function setPhase(nextPhase, t) {
+  phase = nextPhase;
+  phaseStart = t;
+  if (phase === PHASES.INTRO_COIN) {
+    gp.set(view.halfW * 0.35, 0, 0);
+    gatherPoint.copy(gp);
+  }
+}
+
+function getPhaseTime(t) {
+  return t - phaseStart;
+}
+
+function getPhaseProgress(t) {
+  return Math.min(1, getPhaseTime(t) / PHASE_DURATION_BY_NAME[phase]);
+}
+
+function advancePhaseIfNeeded(t) {
+  while (getPhaseTime(t) >= PHASE_DURATION_BY_NAME[phase]) {
+    const overflow = getPhaseTime(t) - PHASE_DURATION_BY_NAME[phase];
+    phase = NEXT_PHASE[phase];
+    phaseStart = t - overflow;
+    if (phase === PHASES.INTRO_COIN) {
+      gp.set(view.halfW * 0.35, 0, 0);
+      gatherPoint.copy(gp);
+    }
+  }
+}
+
+function updateCoinMaterialsEmissive(amount) {
+  const e = Math.max(0, amount);
+  faceMat.emissiveIntensity = e * 0.6;
+  edgeMat.emissiveIntensity = e * 1.3;
+  backMat.emissiveIntensity = e * 0.6;
+}
+
+function setAllCoinInstancesHidden() {
+  for (let i = 0; i < data.length; i++) {
+    dummy.scale.setScalar(0);
+    dummy.updateMatrix();
+    coins.setMatrixAt(i, dummy.matrix);
+  }
+  coins.instanceMatrix.needsUpdate = true;
+}
+
 // Update every coin's instance matrix for time t (dt advances tumbling spin).
 function updateCoins(t, dt) {
   if (DEBUG_UPRIGHT) {
@@ -311,75 +444,119 @@ function updateCoins(t, dt) {
     return;
   }
 
-  // Mouse takes over while it's recently moving; otherwise a slow auto cycle runs.
-  const mouseEngaged = ptr.active && (performance.now() - lastMoveTime < 1500);
+  advancePhaseIfNeeded(t);
 
   C.set(view.halfW * 0.35, 0, 0);
-  pointerWorld.set(ptr.x * view.halfW, ptr.y * view.halfH, 0);
-  // merge point: follows cursor when engaged, else returns to cluster center (eased)
-  const desired = mouseEngaged ? tmpV.copy(C).lerp(pointerWorld, 0.35) : tmpV.copy(C);
-  gp.lerp(desired, 0.08);
+  gp.lerp(C, 0.08);
   gatherPoint.copy(gp);
 
-  if (mouseEngaged) {
-    // closer cursor -> stronger gather
-    gather.target = 1 - smooth01((pointerWorld.distanceTo(C) - 1.5) / 4.0);
-  } else {
-    // auto: scattered hold -> gather -> long merged hold (spins) -> scatter, looping
-    const ph = (t % AUTO_PERIOD) / AUTO_PERIOD;
-    gather.target = smooth01((ph - 0.35) / 0.15) * (1 - smooth01((ph - 0.85) / 0.10));
-  }
-  gather.cur += (gather.target - gather.cur) * 0.05;
+  const p = getPhaseProgress(t);
+  const eased = smooth01(p);
+  const isCoinPhase = phase === PHASES.COIN_EXPLODE || phase === PHASES.COIN_FIELD || phase === PHASES.COIN_GATHER || phase === PHASES.GOLD_FLASH;
+  coins.visible = isCoinPhase;
+  heroCoin.visible = false;
+  goldBar.visible = false;
+  flashSprite.visible = false;
+  updateCoinMaterialsEmissive(0);
 
-  // Gold flash pulse when the swarm crosses into "merged" on the way up
-  if (prevGather < 0.85 && gather.cur >= 0.85) { flash = 1; }
-  prevGather = gather.cur;
-  flash *= 0.94;
-  const e = flash * flash;
-  faceMat.emissiveIntensity = e * 0.6;
-  edgeMat.emissiveIntensity = e * 1.3;
-  backMat.emissiveIntensity = e * 0.6;
-  const bigNow = BIG_SCALE * (1 + flash * 0.08); // brief scale pop on merge
-
-  // Gathered instances converge only to the calibrated upright orientation.
-  // Scatter can tumble freely, but merged coins must not keep any random roll,
-  // tilt, or arbitrary final angle.
   qB.copy(qUpright);
+
+  if (phase === PHASES.INTRO_COIN) {
+    setAllCoinInstancesHidden();
+    heroCoin.visible = true;
+    heroCoin.position.copy(gatherPoint);
+    applyUprightCameraFacingOrientation(heroCoin);
+    heroCoin.scale.setScalar(BIG_SCALE * eased);
+    return;
+  }
+
+  if (phase === PHASES.COIN_SPIN) {
+    setAllCoinInstancesHidden();
+    heroCoin.visible = true;
+    heroCoin.position.copy(gatherPoint);
+    applyUprightCameraFacingOrientation(heroCoin);
+    ySpinQuat.setFromAxisAngle(Y_AXIS, Math.PI * 2 * eased);
+    heroCoin.quaternion.multiply(ySpinQuat);
+    heroCoin.scale.setScalar(BIG_SCALE);
+    return;
+  }
+
+  if (phase === PHASES.GOLD_BAR) {
+    setAllCoinInstancesHidden();
+    const intro = Math.min(1, p / 0.22);
+    const settle = 1 + Math.sin(intro * Math.PI) * 0.12;
+    const floatY = Math.sin(t * 1.2) * 0.08;
+    goldBar.visible = true;
+    goldBar.position.set(gatherPoint.x, gatherPoint.y + floatY, gatherPoint.z);
+    goldBar.rotation.set(0.08 * Math.sin(t * 0.7), 0.12 * Math.sin(t * 0.45), 0.03 * Math.sin(t * 0.6));
+    goldBar.scale.setScalar(GOLD_BAR_BASE_SCALE * (0.2 + 0.8 * smooth01(intro)) * settle);
+    if (goldBarMat) goldBarMat.opacity = smooth01(intro);
+    return;
+  }
+
+  if (phase === PHASES.GOLD_FLASH) {
+    const flashOpacity = 1 - smooth01(Math.max(0, p - 0.15) / 0.85);
+    const flashScale = 0.5 + 3.5 * smooth01(p);
+    updateCoinMaterialsEmissive((1 - p) * 1.4);
+    flashSprite.visible = true;
+    flashSprite.position.copy(gatherPoint);
+    flashSprite.scale.setScalar(flashScale);
+    flashMat.opacity = flashOpacity;
+  }
 
   for (let i = 0; i < data.length; i++) {
     const c = data[i];
     c.angle += c.spin * dt;
-    const g = smooth01((gather.cur - c.delay) / (1 - MAX_DELAY));
 
-    // scattered transform
     const sx = c.x;
     const sy = c.y + Math.sin(t * c.floatSpeed + c.floatPhase) * c.floatAmp;
     const sz = c.z;
     tmpAxis.copy(c.axis);
     qA.copy(qSpin.setFromAxisAngle(tmpAxis, c.angle)).multiply(qUpright);
 
+    let outward = 1;
+    let gathered = 0;
+    let scaleMultiplier = 1;
+
+    if (phase === PHASES.COIN_EXPLODE) {
+      outward = smooth01((p - c.delay) / (1 - MAX_DELAY));
+      scaleMultiplier = outward * (1 - 0.25 * (1 - eased));
+      heroCoin.visible = p < 0.72;
+    } else if (phase === PHASES.COIN_FIELD) {
+      outward = 1;
+      scaleMultiplier = 1;
+    } else if (phase === PHASES.COIN_GATHER) {
+      gathered = smooth01((p - c.delay) / (1 - MAX_DELAY));
+      outward = 1 - gathered;
+      scaleMultiplier = 1 - smooth01((gathered - 0.4) / 0.5);
+    } else if (phase === PHASES.GOLD_FLASH) {
+      gathered = 1;
+      outward = 0;
+      scaleMultiplier = 0;
+    }
+
     dummy.position.set(
-      sx + (gatherPoint.x - sx) * g,
-      sy + (gatherPoint.y - sy) * g,
-      sz + (gatherPoint.z - sz) * g
+      gatherPoint.x + (sx - gatherPoint.x) * outward,
+      gatherPoint.y + (sy - gatherPoint.y) * outward,
+      gatherPoint.z + (sz - gatherPoint.z) * outward
     );
-    dummy.quaternion.copy(qA).slerp(qB, g);
-    // Instances shrink to nothing as they reach the center, so they never pile up
-    // and interpenetrate — the hero coin (below) blooms in their place.
-    dummy.scale.setScalar(c.scale * (1 - smooth01((g - 0.4) / 0.5)));
+    dummy.quaternion.copy(qA).slerp(qB, gathered);
+    dummy.scale.setScalar(c.scale * scaleMultiplier);
     dummy.updateMatrix();
     coins.setMatrixAt(i, dummy.matrix);
   }
   coins.instanceMatrix.needsUpdate = true;
 
-  // The single hero coin grows as the swarm converges → one clean coin, no clipping
-  const heroAmt = smooth01((gather.cur - 0.45) / 0.4);
-  heroCoin.visible = heroAmt > 0.01;
-  if (heroCoin.visible) {
+  if (phase === PHASES.COIN_EXPLODE && heroCoin.visible) {
+    const shrink = 1 - smooth01(p / 0.72);
     heroCoin.position.copy(gatherPoint);
     applyUprightCameraFacingOrientation(heroCoin);
-    heroCoin.scale.setScalar(bigNow * heroAmt);
+    heroCoin.scale.setScalar(BIG_SCALE * shrink);
   }
+
+  // During the final transformation, gathered small coins shrink away at the
+  // center and hand off only to golden light. Do not reveal the large hero coin
+  // as an intermediate object before the physical gold bar appears.
 }
 
 function showDebugUprightCoin() {
@@ -426,24 +603,35 @@ function initCoinField() {
     seedCoins(aspect);
     scene.add(coins);
 
-    // Single merged "hero" coin (same geometry/materials) that the swarm dissolves into
+    // Single large hero coin (same geometry/materials) used for intro, spin, and explode.
     heroCoin = new THREE.Mesh(coins.geometry, [edgeMat, faceMat, backMat]);
     heroCoin.visible = false;
     scene.add(heroCoin);
 
-    heroSection.classList.add('coins-3d');
+    flashSprite = buildFlashSprite();
+    scene.add(flashSprite);
 
-    heroSection.addEventListener('pointermove', (e) => {
-      ptr.x = (e.clientX / window.innerWidth) * 2 - 1;
-      ptr.y = -((e.clientY / window.innerHeight) * 2 - 1);
-      ptr.active = true;
-      lastMoveTime = performance.now();
+    new THREE.TextureLoader().load(assets.goldBar, (goldBarTexture) => {
+      goldBar = buildGoldBar(goldBarTexture);
+      scene.add(goldBar);
+
+      heroSection.classList.add('coins-3d');
+
+      heroSection.addEventListener('pointermove', (e) => {
+        ptr.x = (e.clientX / window.innerWidth) * 2 - 1;
+        ptr.y = -((e.clientY / window.innerHeight) * 2 - 1);
+        ptr.active = true;
+      });
+      heroSection.addEventListener('pointerleave', () => { ptr.active = false; });
+
+      setPhase(PHASES.INTRO_COIN, 0);
+      window.addEventListener('resize', onFieldResize);
+      clock.start();
+      renderer.setAnimationLoop(animateField);
+    }, undefined, (err) => {
+      console.warn('[GoldHero] gold bar texture failed, using image fallback:', err);
+      initFallbackTilt();
     });
-    heroSection.addEventListener('pointerleave', () => { ptr.active = false; });
-
-    window.addEventListener('resize', onFieldResize);
-    clock.start();
-    renderer.setAnimationLoop(animateField);
   }, undefined, (err) => {
     console.warn('[GoldHero] coin texture failed, using image fallback:', err);
     initFallbackTilt();
