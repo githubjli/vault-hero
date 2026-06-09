@@ -30,7 +30,7 @@ const DEFAULT_VAULT_IMG = new URL('../assets/singapore_gold_vault.png', import.m
  *
  * Change only this value when replacing the coin artwork.
  */
-const COIN_UPRIGHT_ROTATION = Math.PI / 2;
+const COIN_UPRIGHT_ROTATION = -Math.PI / 2;
 const DEBUG_UPRIGHT = false;
 
 const ROOT_ID = 'gold-hero';
