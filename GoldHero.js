@@ -152,22 +152,29 @@ function initParticles() {
 // ---------------------------------------------------------------------------
 let renderer, scene, camera, coins, heroCoin, faceMat, edgeMat, backMat;
 let flash = 0, prevGather = 0;          // gold flash pulse at the merge moment
-let mergeT0 = -100;                      // time the swarm last merged (anchors the spin)
 const clock = new THREE.Clock();
 const BASE_Z = 9;
 const BIG_SCALE = 2.4;          // size of the merged single coin
 const MAX_DELAY = 0.45;         // gather/scatter wave spread
 
 const dummy = new THREE.Object3D();
-const Y_AXIS = new THREE.Vector3(0, 1, 0);
+const billboardHelper = new THREE.Object3D();
 const Z_AXIS = new THREE.Vector3(0, 0, 1);
-const qFace = new THREE.Quaternion(); // identity: coin geometry is pre-rotated to face +Z
-// Z-roll correction so the merged coin's G is perfectly upright (tune if texture is rotated)
-const TEXTURE_ROTATION_FIX = 0;
-const qTextureFix = new THREE.Quaternion().setFromAxisAngle(Z_AXIS, TEXTURE_ROTATION_FIX);
-const qUpright = new THREE.Quaternion().copy(qFace).multiply(qTextureFix);
+
+/**
+ * Asset convention:
+ *
+ * bgv-main-icon_02.png
+ * = canonical front face
+ * = G upright
+ * = rotation 0
+ *
+ * Every merged hero coin must return
+ * to this orientation.
+ */
+const COIN_UPRIGHT_ROTATION = 0;
+const qUpright = new THREE.Quaternion().setFromAxisAngle(Z_AXIS, COIN_UPRIGHT_ROTATION);
 const qSpin = new THREE.Quaternion();
-const qShared = new THREE.Quaternion();
 const qA = new THREE.Quaternion();
 const qB = new THREE.Quaternion();
 const tmpAxis = new THREE.Vector3();
@@ -286,7 +293,7 @@ function updateCoins(t, dt) {
   gather.cur += (gather.target - gather.cur) * 0.05;
 
   // Gold flash pulse when the swarm crosses into "merged" on the way up
-  if (prevGather < 0.85 && gather.cur >= 0.85) { flash = 1; mergeT0 = t; } // anchor spin to merge
+  if (prevGather < 0.85 && gather.cur >= 0.85) { flash = 1; }
   prevGather = gather.cur;
   flash *= 0.94;
   const e = flash * flash;
@@ -295,16 +302,10 @@ function updateCoins(t, dt) {
   backMat.emissiveIntensity = e * 0.6;
   const bigNow = BIG_SCALE * (1 + flash * 0.08); // brief scale pop on merge
 
-  // Merged hero coin orientation: the G must ALWAYS end upright and facing the
-  // camera. Only a slight, decaying rotateY wobble is allowed — never a Z-roll,
-  // tumble, or random tilt. It settles to the fixed upright quaternion (qFace),
-  // which the texture verified as "G facing camera, G up". Anchored to mergeT0
-  // so mouse-triggered merges settle upright too.
-  const SETTLE = 4.0;                            // seconds for the wobble to fully settle
-  const st = Math.max(0, t - mergeT0);
-  const wobbleY = st >= SETTLE ? 0 : Math.sin(st * 2.0) * 0.35 * (1 - st / SETTLE); // gentle rotateY → 0
-  qShared.setFromAxisAngle(Y_AXIS, wobbleY);
-  qB.copy(qShared).multiply(qUpright);           // instance slerp target (hero coin billboards below)
+  // Gathered instances converge only to the canonical upright orientation.
+  // Scatter can tumble freely, but merged coins must not keep any random roll,
+  // tilt, or arbitrary final angle.
+  qB.copy(qUpright);
 
   for (let i = 0; i < data.length; i++) {
     const c = data[i];
@@ -316,7 +317,7 @@ function updateCoins(t, dt) {
     const sy = c.y + Math.sin(t * c.floatSpeed + c.floatPhase) * c.floatAmp;
     const sz = c.z;
     tmpAxis.copy(c.axis);
-    qA.copy(qSpin.setFromAxisAngle(tmpAxis, c.angle)).multiply(qFace);
+    qA.copy(qSpin.setFromAxisAngle(tmpAxis, c.angle)).multiply(qUpright);
 
     dummy.position.set(
       sx + (gatherPoint.x - sx) * g,
@@ -337,14 +338,19 @@ function updateCoins(t, dt) {
   heroCoin.visible = heroAmt > 0.01;
   if (heroCoin.visible) {
     heroCoin.position.copy(gatherPoint);
-    // Billboard: face the camera with world-up, so the G is always head-on and
-    // upright regardless of the coin's position or camera parallax.
-    heroCoin.up.set(0, 1, 0);
-    heroCoin.lookAt(camera.position);
-    heroCoin.rotateZ(TEXTURE_ROTATION_FIX);      // residual texture-roll correction
-    if (wobbleY) heroCoin.rotateY(wobbleY);      // gentle settle wobble (Y only)
+    applyUprightCameraFacingOrientation(heroCoin);
     heroCoin.scale.setScalar(bigNow * heroAmt);
   }
+}
+
+function applyUprightCameraFacingOrientation(mesh) {
+  // Face the camera first, then apply the single canonical upright correction.
+  // This keeps the merged G readable without adding any ad hoc Z-roll or
+  // arbitrary final angle outside qUpright.
+  billboardHelper.position.copy(mesh.position);
+  billboardHelper.up.set(0, 1, 0);
+  billboardHelper.lookAt(camera.position);
+  mesh.quaternion.copy(billboardHelper.quaternion).multiply(qUpright);
 }
 
 function initCoinField() {
