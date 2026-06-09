@@ -1,0 +1,294 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400..700;1,400..700&display=swap');
+
+#gold-hero {
+  --bg-void: #060608;
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --gold-primary: #d4af37;
+  --gold-light: #f3e5ab;
+  --gold-dark: #aa7c11;
+  --gold-gradient: linear-gradient(135deg, #f3e5ab 0%, #d4af37 50%, #aa7c11 100%);
+  --gold-radial: radial-gradient(circle, #f3e5ab 0%, #d4af37 60%, #8a640f 100%);
+  --gold-glow: rgba(212, 175, 55, 0.25);
+  --gold-border: rgba(212, 175, 55, 0.15);
+  --gold-border-hover: rgba(212, 175, 55, 0.4);
+  --font-body: 'Inter', sans-serif;
+  --font-heading: 'Playfair Display', serif;
+  --radius-button: 9999px;
+  --transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+
+  display: block;
+  background: var(--bg-void);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+}
+
+#gold-hero *,
+#gold-hero *::before,
+#gold-hero *::after {
+  box-sizing: border-box;
+}
+
+#gold-hero a {
+  color: inherit;
+  text-decoration: none;
+  transition: var(--transition);
+}
+
+#gold-hero .container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+#gold-hero .gold-text {
+  background: var(--gold-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: inline-block;
+}
+
+#gold-hero .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.9rem 2.2rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  font-family: var(--font-body);
+  border-radius: var(--radius-button);
+  cursor: pointer;
+  transition: var(--transition);
+  gap: 0.5rem;
+}
+
+#gold-hero .btn-primary {
+  background: var(--gold-gradient);
+  color: var(--bg-void);
+  border: none;
+  box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+}
+
+#gold-hero .btn-primary:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 6px 25px rgba(212, 175, 55, 0.5), 0 0 15px var(--gold-primary);
+}
+
+#gold-hero .btn-secondary {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+  border: 1px solid var(--gold-border);
+  backdrop-filter: blur(8px);
+}
+
+#gold-hero .btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--gold-primary);
+  transform: translateY(-2px);
+  box-shadow: 0 0 15px var(--gold-glow);
+}
+
+#gold-hero .hero-section {
+  min-height: 100vh;
+  padding-top: 120px;
+  display: flex;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+}
+
+#gold-hero .hero-bg-vault {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 50%;
+  height: 100%;
+  background-image: linear-gradient(90deg, var(--bg-void) 0%, rgba(6, 6, 8, 0.4) 40%, rgba(6, 6, 8, 0) 100%), var(--gold-hero-vault-image);
+  background-size: cover;
+  background-position: center left;
+  opacity: 0.55;
+  mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 85%, rgba(0,0,0,0) 100%);
+  -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 85%, rgba(0,0,0,0) 100%);
+  z-index: 1;
+}
+
+#gold-hero .hero-section .container {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  align-items: center;
+  gap: 3rem;
+  position: relative;
+  z-index: 2;
+}
+
+#gold-hero .hero-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.8rem;
+}
+
+#gold-hero .badge-singapore {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--gold-border);
+  padding: 0.5rem 1.2rem;
+  border-radius: 9999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+#gold-hero .flag-sg {
+  width: 18px;
+  height: 12px;
+  background-image: url('https://upload.wikimedia.org/wikipedia/commons/4/48/Flag_of_Singapore.svg');
+  background-size: cover;
+  border-radius: 1px;
+}
+
+#gold-hero .hero-title {
+  font-family: var(--font-heading);
+  font-size: 4rem;
+  line-height: 1.1;
+  font-weight: 800;
+  margin: 0;
+}
+
+#gold-hero .hero-subtitle {
+  font-family: var(--font-body);
+  font-size: 1.2rem;
+  color: var(--text-secondary);
+  max-width: 580px;
+  margin: 0;
+}
+
+#gold-hero .conversion-statement {
+  background: rgba(255, 255, 255, 0.02);
+  border-left: 3px solid var(--gold-primary);
+  padding: 1.5rem;
+  border-radius: 0 12px 12px 0;
+  font-weight: 500;
+  margin: 0.5rem 0;
+  max-width: 580px;
+}
+
+#gold-hero .conversion-statement p {
+  color: var(--text-primary);
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+#gold-hero .conversion-statement span {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-top: 0.5rem;
+}
+
+#gold-hero .hero-tagline {
+  font-size: 1.4rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  padding: 0.8rem 0;
+  margin: 0.5rem 0;
+  width: fit-content;
+}
+
+#gold-hero .hero-actions {
+  display: flex;
+  gap: 1.2rem;
+}
+
+#gold-hero .coin-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+}
+
+#gold-hero .hero-coin {
+  width: 380px;
+  height: 380px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 35px rgba(212, 175, 55, 0.45));
+  transition: transform 0.1s ease;
+  cursor: pointer;
+  z-index: 2;
+}
+
+#gold-hero .coin-glow-effect {
+  position: absolute;
+  width: 250px;
+  height: 250px;
+  background: var(--gold-radial);
+  opacity: 0.3;
+  filter: blur(50px);
+  border-radius: 50%;
+  z-index: 1;
+}
+
+#gold-hero .hero-particles,
+#gold-hero .simple-hero-stage {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+#gold-hero .simple-hero-stage {
+  width: 100%;
+  height: 100vh;
+}
+
+#gold-hero .hero-section.simple-3d .hero-coin,
+#gold-hero .hero-section.simple-3d .coin-glow-effect {
+  display: none;
+}
+
+@media (max-width: 1024px) {
+  #gold-hero .hero-title { font-size: 3.2rem; }
+  #gold-hero .hero-coin { width: 320px; height: 320px; }
+}
+
+@media (max-width: 991px) {
+  #gold-hero .hero-section { padding-top: 100px; }
+  #gold-hero .hero-section .container {
+    grid-template-columns: 1fr;
+    text-align: center;
+    gap: 2rem;
+  }
+  #gold-hero .hero-bg-vault { width: 100%; opacity: 0.3; }
+  #gold-hero .badge-singapore { align-self: center; }
+  #gold-hero .hero-tagline { margin: 0.5rem auto; }
+  #gold-hero .hero-actions { justify-content: center; flex-wrap: wrap; }
+}
+
+@media (max-width: 480px) {
+  #gold-hero .container { padding: 0 1.2rem; }
+  #gold-hero .hero-title { font-size: 2.4rem; }
+  #gold-hero .hero-coin { width: 260px; height: 260px; }
+  #gold-hero .hero-actions { flex-direction: column; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #gold-hero *,
+  #gold-hero *::before,
+  #gold-hero *::after {
+    animation-delay: -1ms !important;
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0s !important;
+    transition-delay: 0s !important;
+  }
+  #gold-hero .hero-coin { transform: none !important; }
+}
