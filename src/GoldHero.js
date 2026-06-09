@@ -28,10 +28,16 @@ const DEFAULT_VAULT_IMG = new URL('../assets/singapore_gold_vault.png', import.m
  * bgv-main-icon_02.png is the canonical front face.
  * The G should be upright when COIN_UPRIGHT_ROTATION is applied.
  *
+ * Asset convention:
+ * bgv-main-icon_02.png
+ * = canonical front face
+ * = G upright
+ * = rotation 0
+ *
  * Change only this value when replacing the coin artwork.
  */
 const COIN_UPRIGHT_ROTATION = -Math.PI / 2;
-const DEBUG_UPRIGHT = false;
+const DEBUG_UPRIGHT = true;
 
 const ROOT_ID = 'gold-hero';
 
@@ -187,7 +193,13 @@ const MAX_DELAY = 0.45;         // gather/scatter wave spread
 const dummy = new THREE.Object3D();
 const billboardHelper = new THREE.Object3D();
 const Z_AXIS = new THREE.Vector3(0, 0, 1);
-const qUpright = new THREE.Quaternion().setFromAxisAngle(Z_AXIS, COIN_UPRIGHT_ROTATION);
+// The geometry is pre-rotated so the front cap normal points toward +Z,
+// which faces the default camera at +Z. No logo roll is encoded here.
+const qFace = new THREE.Quaternion();
+// The only logo-roll correction: rotate around the coin face normal.
+const qLogoFix = new THREE.Quaternion().setFromAxisAngle(Z_AXIS, COIN_UPRIGHT_ROTATION);
+// Canonical final coin orientation: face camera + calibrated upright logo.
+const qUpright = new THREE.Quaternion().copy(qFace).multiply(qLogoFix);
 const qSpin = new THREE.Quaternion();
 const qA = new THREE.Quaternion();
 const qB = new THREE.Quaternion();
@@ -294,6 +306,11 @@ function smooth01(x) { x = Math.min(1, Math.max(0, x)); return x * x * (3 - 2 * 
 
 // Update every coin's instance matrix for time t (dt advances tumbling spin).
 function updateCoins(t, dt) {
+  if (DEBUG_UPRIGHT) {
+    showDebugUprightCoin();
+    return;
+  }
+
   // Mouse takes over while it's recently moving; otherwise a slow auto cycle runs.
   const mouseEngaged = ptr.active && (performance.now() - lastMoveTime < 1500);
 
@@ -323,7 +340,6 @@ function updateCoins(t, dt) {
   edgeMat.emissiveIntensity = e * 1.3;
   backMat.emissiveIntensity = e * 0.6;
   const bigNow = BIG_SCALE * (1 + flash * 0.08); // brief scale pop on merge
-  const debugUpright = DEBUG_UPRIGHT && heroCoin;
 
   // Gathered instances converge only to the calibrated upright orientation.
   // Scatter can tumble freely, but merged coins must not keep any random roll,
@@ -333,7 +349,7 @@ function updateCoins(t, dt) {
   for (let i = 0; i < data.length; i++) {
     const c = data[i];
     c.angle += c.spin * dt;
-    const g = debugUpright ? 1 : smooth01((gather.cur - c.delay) / (1 - MAX_DELAY));
+    const g = smooth01((gather.cur - c.delay) / (1 - MAX_DELAY));
 
     // scattered transform
     const sx = c.x;
@@ -357,13 +373,22 @@ function updateCoins(t, dt) {
   coins.instanceMatrix.needsUpdate = true;
 
   // The single hero coin grows as the swarm converges → one clean coin, no clipping
-  const heroAmt = debugUpright ? 1 : smooth01((gather.cur - 0.45) / 0.4);
+  const heroAmt = smooth01((gather.cur - 0.45) / 0.4);
   heroCoin.visible = heroAmt > 0.01;
   if (heroCoin.visible) {
-    heroCoin.position.copy(debugUpright ? C : gatherPoint);
+    heroCoin.position.copy(gatherPoint);
     applyUprightCameraFacingOrientation(heroCoin);
     heroCoin.scale.setScalar(bigNow * heroAmt);
   }
+}
+
+function showDebugUprightCoin() {
+  if (coins) coins.visible = false;
+  if (!heroCoin) return;
+  heroCoin.visible = true;
+  heroCoin.position.set(0, 0, 0);
+  heroCoin.quaternion.copy(qUpright);
+  heroCoin.scale.setScalar(3);
 }
 
 function applyUprightCameraFacingOrientation(mesh) {
