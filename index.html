@@ -9,14 +9,7 @@
     content="Blockchain Gold Vault (BGV) is a pioneering PoW blockchain stablecoin, where 1 GOLD-BGV is backed 100% by 1 gram of physical gold secured in Singapore vaults.">
   <link rel="stylesheet" href="style.css">
 
-  <!-- Hero upgrade: Three.js loaded as an ES module via CDN importmap (no build step) -->
-  <script type="importmap">
-    {
-      "imports": {
-        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
-      }
-    }
-  </script>
+  <link rel="stylesheet" href="GoldHero.css">
 </head>
 
 <body>
@@ -53,64 +46,8 @@
     </div>
   </header>
 
-  <!-- HERO SECTION -->
-  <section class="hero-section" id="hero">
-    <div class="hero-bg-vault"></div>
-    <!-- Hero upgrade: floating 3D coin field (Three.js InstancedMesh), sits behind the text -->
-    <canvas class="coin-field" id="coin-field" aria-hidden="true"></canvas>
-    <!-- Hero upgrade: tsParticles gold background renders into this layer -->
-    <div class="hero-particles" id="hero-particles"></div>
-    <div class="container">
-      <div class="hero-content">
-        <div class="badge-singapore">
-          <span class="flag-sg"></span>
-          <span>Based in Singapore</span>
-        </div>
-
-        <h1 class="hero-title">
-          The Gold-Backed<br>
-          <span class="gold-text">Stablecoin</span> You Trust
-        </h1>
-
-        <p class="hero-subtitle">
-          Blockchain Gold Vault (BGV) integrates the timeless, secure value of physical gold with the efficiency and
-          transparency of blockchain. 1 GOLD-BGV is backed by exactly 1 gram of physical gold.
-        </p>
-
-        <div class="conversion-statement" style="margin: 0.5rem 0; max-width: 580px;">
-          <p>"The gold you buy is legally owned by you, not a promise or IOU. You have full rights to your physical gold."</p>
-          <span>- BGV Custodial Legal Title</span>
-        </div>
-
-        <div class="hero-tagline gold-text">
-          Real Gold. Real Ownership. Real Security.
-        </div>
-
-        <div class="hero-actions">
-          <a href="#wallet" class="btn btn-primary">
-            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-              <path
-                d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-            </svg>
-            Get BGV Wallet
-          </a>
-          <a href="#calculator" class="btn btn-secondary">
-            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-              <path
-                d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-            </svg>
-            Calculate Value
-          </a>
-        </div>
-      </div>
-
-      <div class="coin-container" id="coin-container">
-        <div class="coin-glow-effect"></div>
-        <!-- Fallback single coin: shown only when WebGL is unavailable; otherwise the floating field replaces it -->
-        <img src="assets/bgv-main-icon_02.png" alt="BGV Gold Stablecoin" class="hero-coin" id="hero-coin">
-      </div>
-    </div>
-  </section>
+  <!-- HERO SECTION (standalone GoldHero component mount) -->
+  <div id="gold-hero"></div>
 
   <!-- TRUST BAR -->
   <section class="trust-bar">
@@ -654,13 +591,9 @@
     </div>
   </footer>
 
-  <!-- Hero upgrade: animation libraries via CDN (UMD globals) -->
-  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@tsparticles/slim@3.5.0/tsparticles.slim.bundle.min.js"></script>
-
   <script src="app.js"></script>
-  <!-- Hero upgrade: Three.js coin + GSAP float + fly-into-wallet (ES module) -->
-  <script type="module" src="hero.js"></script>
+  <!-- Standalone GoldHero component: injects the hero markup and loads its own animation dependencies. -->
+  <script type="module" src="GoldHero.js"></script>
 </body>
 
 </html>
