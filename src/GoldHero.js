@@ -22,6 +22,17 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.m
 const DEFAULT_COIN_IMG = new URL('../assets/bgv-main-icon_02.png', import.meta.url).href;
 const DEFAULT_VAULT_IMG = new URL('../assets/singapore_gold_vault.png', import.meta.url).href;
 
+/**
+ * Coin texture orientation calibration.
+ *
+ * bgv-main-icon_02.png is the canonical front face.
+ * The G should be upright when COIN_UPRIGHT_ROTATION is applied.
+ *
+ * Change only this value when replacing the coin artwork.
+ */
+const COIN_UPRIGHT_ROTATION = Math.PI / 2;
+const DEBUG_UPRIGHT = false;
+
 const ROOT_ID = 'gold-hero';
 
 function loadScriptOnce(src) {
@@ -176,19 +187,6 @@ const MAX_DELAY = 0.45;         // gather/scatter wave spread
 const dummy = new THREE.Object3D();
 const billboardHelper = new THREE.Object3D();
 const Z_AXIS = new THREE.Vector3(0, 0, 1);
-
-/**
- * Asset convention:
- *
- * bgv-main-icon_02.png
- * = canonical front face
- * = G upright
- * = rotation 0
- *
- * Every merged hero coin must return
- * to this orientation.
- */
-const COIN_UPRIGHT_ROTATION = 0;
 const qUpright = new THREE.Quaternion().setFromAxisAngle(Z_AXIS, COIN_UPRIGHT_ROTATION);
 const qSpin = new THREE.Quaternion();
 const qA = new THREE.Quaternion();
@@ -219,9 +217,17 @@ function fieldSize() {
   return { width, height };
 }
 
+function calibrateCoinTexture(texture) {
+  texture.center.set(0.5, 0.5);
+  texture.rotation = COIN_UPRIGHT_ROTATION;
+  texture.needsUpdate = true;
+  return texture;
+}
+
 function buildCoinMesh(texture) {
   const geo = new THREE.CylinderGeometry(0.6, 0.6, 0.16, 40); // a touch thicker so the spinning edge reads
-  geo.rotateX(Math.PI / 2); // caps now face ±Z, so the coin's face points along +Z (forward)
+  geo.rotateX(THREE.MathUtils.degToRad(90)); // caps now face ±Z, so the coin's face points along +Z (forward)
+  calibrateCoinTexture(texture);
   faceMat = new THREE.MeshStandardMaterial({
     map: texture, metalness: 0.55, roughness: 0.35, alphaTest: 0.5,
     emissive: 0xffcf66, emissiveIntensity: 0
@@ -231,7 +237,7 @@ function buildCoinMesh(texture) {
     emissive: 0xffe08a, emissiveIntensity: 0
   });
   // Back face: horizontally-flipped texture so the G reads correctly from behind too
-  const backTex = texture.clone();
+  const backTex = calibrateCoinTexture(texture.clone());
   backTex.colorSpace = THREE.SRGBColorSpace;
   backTex.wrapS = THREE.RepeatWrapping;
   backTex.repeat.x = -1;
@@ -317,8 +323,9 @@ function updateCoins(t, dt) {
   edgeMat.emissiveIntensity = e * 1.3;
   backMat.emissiveIntensity = e * 0.6;
   const bigNow = BIG_SCALE * (1 + flash * 0.08); // brief scale pop on merge
+  const debugUpright = DEBUG_UPRIGHT && heroCoin;
 
-  // Gathered instances converge only to the canonical upright orientation.
+  // Gathered instances converge only to the calibrated upright orientation.
   // Scatter can tumble freely, but merged coins must not keep any random roll,
   // tilt, or arbitrary final angle.
   qB.copy(qUpright);
@@ -326,7 +333,7 @@ function updateCoins(t, dt) {
   for (let i = 0; i < data.length; i++) {
     const c = data[i];
     c.angle += c.spin * dt;
-    const g = smooth01((gather.cur - c.delay) / (1 - MAX_DELAY));
+    const g = debugUpright ? 1 : smooth01((gather.cur - c.delay) / (1 - MAX_DELAY));
 
     // scattered transform
     const sx = c.x;
@@ -350,10 +357,10 @@ function updateCoins(t, dt) {
   coins.instanceMatrix.needsUpdate = true;
 
   // The single hero coin grows as the swarm converges → one clean coin, no clipping
-  const heroAmt = smooth01((gather.cur - 0.45) / 0.4);
+  const heroAmt = debugUpright ? 1 : smooth01((gather.cur - 0.45) / 0.4);
   heroCoin.visible = heroAmt > 0.01;
   if (heroCoin.visible) {
-    heroCoin.position.copy(gatherPoint);
+    heroCoin.position.copy(debugUpright ? C : gatherPoint);
     applyUprightCameraFacingOrientation(heroCoin);
     heroCoin.scale.setScalar(bigNow * heroAmt);
   }
