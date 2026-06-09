@@ -1,29 +1,25 @@
 # Vault Hero / GoldHero
 
-`GoldHero` is a standalone, static Hero component for the BGV landing page. It injects its own markup into a single mount element, scopes its styles to `#gold-hero`, and keeps all coin animation behavior inside `src/GoldHero.js`.
+`GoldHero` is a standalone, static Hero component for the BGV landing page. It injects its markup into a single mount element, scopes its styles to `#gold-hero`, and keeps the Three.js coin animation logic inside `src/GoldHero.js`.
 
 ## Project structure
 
 ```text
 vault-hero/
+├── index.html          # third-party usage example / quick preview
 ├── src/
-│   ├── GoldHero.js
-│   └── GoldHero.css
-├── demo/
-│   ├── demo.html
-│   └── assets/              # local-only image files; not committed
-├── screenshots/             # optional local screenshots; not committed
-├── assets/                  # local/site image files
-├── app.js
-├── index.html
-├── style.css
+│   ├── GoldHero.js     # component source
+│   └── GoldHero.css    # component styles
+├── assets/             # example assets
+│   ├── bgv-main-icon_02.png
+│   └── singapore_gold_vault.png
 ├── README.md
 └── LICENSE
 ```
 
-## Usage
+## Quick start
 
-Add the stylesheet, the mount element, and the module script:
+Use the component with one stylesheet, one mount element, and one module script:
 
 ```html
 <link rel="stylesheet" href="src/GoldHero.css">
@@ -33,12 +29,16 @@ Add the stylesheet, the mount element, and the module script:
 <script type="module" src="src/GoldHero.js"></script>
 ```
 
-By default, `src/GoldHero.js` resolves its images from the repository-level `assets/` directory:
+Open `index.html` for a minimal preview of the same integration.
+
+## Assets
+
+By default, `src/GoldHero.js` resolves these example assets from the repository-level `assets/` directory:
 
 - `assets/bgv-main-icon_02.png`
 - `assets/singapore_gold_vault.png`
 
-If you copy the component into another project or want the demo to use local assets, provide paths on the mount element:
+If you copy the component into another project, you can override asset paths on the mount element:
 
 ```html
 <div
@@ -48,20 +48,9 @@ If you copy the component into another project or want the demo to use local ass
 ></div>
 ```
 
-## Local assets
+## Local development
 
-Binary assets are intentionally not included in the component/demo patch. Copy these files locally when needed:
-
-- `assets/bgv-main-icon_02.png`
-- `assets/singapore_gold_vault.png`
-- `demo/assets/bgv-main-icon_02.png`
-- `demo/assets/singapore_gold_vault.png`
-
-The main site and demo only reference these paths; image files should be managed outside this code change.
-
-## Development
-
-Run a local static server from the repository root:
+Run a static server from the repository root:
 
 ```bash
 python3 -m http.server 4173
@@ -69,18 +58,16 @@ python3 -m http.server 4173
 
 Then open:
 
-- Main site: <http://127.0.0.1:4173/index.html>
-- Component demo: <http://127.0.0.1:4173/demo/demo.html>
+- <http://127.0.0.1:4173/index.html>
 
 Run syntax checks:
 
 ```bash
-node --check src/GoldHero.js && node --check app.js
+node --check src/GoldHero.js
 ```
 
 ## Notes
 
-- `app.js` remains responsible for non-Hero website logic.
-- All coin animation logic is consolidated into `src/GoldHero.js`.
 - `src/GoldHero.css` only contains Hero component styles scoped under `#gold-hero`.
-- The component uses Three.js from CDN for WebGL rendering and loads optional particle/fallback libraries at runtime.
+- `src/GoldHero.js` loads Three.js from CDN and dynamically loads optional particle/fallback libraries at runtime.
+- `assets/` contains example imagery for preview and default asset resolution.
